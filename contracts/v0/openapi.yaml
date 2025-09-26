@@ -1,0 +1,706 @@
+openapi: 3.1.0
+info:
+  title: 廃棄物管理システム API
+  description: JWNET連携を伴う廃棄物管理システムのAPI仕様
+  version: 1.0.0
+  contact:
+    name: 開発チーム
+    email: dev@example.com
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+  - url: https://your-project.supabase.co/rest/v1
+    description: Supabase PostgREST
+
+security:
+  - bearerAuth: []
+
+paths:
+  /ingest-plans:
+    post:
+      summary: 予定データの取り込み
+      description: CSV/JSON形式の予定データを正規化して取り込む
+      tags:
+        - Plans
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestPlansRequest'
+      responses:
+        '200':
+          description: 取り込み成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestPlansResponse'
+        '400':
+          description: リクエストエラー
+        '401':
+          description: 認証エラー
+        '500':
+          description: サーバーエラー
+
+  /send-reservations:
+    post:
+      summary: 予約データの送信
+      description: 予約データをJWNETに送信する
+      tags:
+        - Reservations
+      responses:
+        '200':
+          description: 送信成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendReservationsResponse'
+        '401':
+          description: 認証エラー
+        '500':
+          description: サーバーエラー
+
+  /commit-registrations:
+    post:
+      summary: 本登録データの送信
+      description: 本登録データをJWNETに送信する
+      tags:
+        - Registrations
+      responses:
+        '200':
+          description: 送信成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitRegistrationsResponse'
+        '401':
+          description: 認証エラー
+        '500':
+          description: サーバーエラー
+
+  /organizations:
+    get:
+      summary: 組織一覧取得
+      tags:
+        - Organizations
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      summary: 組織作成
+      tags:
+        - Organizations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organization'
+      responses:
+        '201':
+          description: 作成成功
+        '400':
+          description: リクエストエラー
+
+  /stores:
+    get:
+      summary: 店舗一覧取得
+      tags:
+        - Stores
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Store'
+    post:
+      summary: 店舗作成
+      tags:
+        - Stores
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+      responses:
+        '201':
+          description: 作成成功
+
+  /item-maps:
+    get:
+      summary: 品目マッピング一覧取得
+      tags:
+        - ItemMaps
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemMap'
+    post:
+      summary: 品目マッピング作成
+      tags:
+        - ItemMaps
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemMap'
+      responses:
+        '201':
+          description: 作成成功
+
+  /plans:
+    get:
+      summary: 予定一覧取得
+      tags:
+        - Plans
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plan'
+    post:
+      summary: 予定作成
+      tags:
+        - Plans
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Plan'
+      responses:
+        '201':
+          description: 作成成功
+
+  /reservations:
+    get:
+      summary: 予約一覧取得
+      tags:
+        - Reservations
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
+
+  /actuals:
+    get:
+      summary: 実績一覧取得
+      tags:
+        - Actuals
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actual'
+    post:
+      summary: 実績作成
+      tags:
+        - Actuals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Actual'
+      responses:
+        '201':
+          description: 作成成功
+
+  /registrations:
+    get:
+      summary: 本登録一覧取得
+      tags:
+        - Registrations
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Registration'
+
+  /v_store_manifests:
+    get:
+      summary: 店舗別実績CSV取得
+      description: 店舗別の実績データをCSV形式で取得
+      tags:
+        - Reports
+      parameters:
+        - name: pickup_date
+          in: query
+          description: 回収日の範囲指定
+          schema:
+            type: string
+            format: date
+        - name: format
+          in: query
+          description: 出力形式
+          schema:
+            type: string
+            enum: [csv, json]
+            default: json
+      responses:
+        '200':
+          description: 成功
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StoreManifestView'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AppRole:
+      type: string
+      enum: [ADMIN, EMITTER, TRANSPORTER, DISPOSER]
+
+    Unit:
+      type: string
+      enum: [T, KG, M3]
+
+    RegStatus:
+      type: string
+      enum: [RESERVED, FAILED, PENDING, REGISTERED, ERROR]
+
+    Organization:
+      type: object
+      required:
+        - id
+        - name
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+
+    UserOrgRole:
+      type: object
+      required:
+        - id
+        - user_id
+        - org_id
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/AppRole'
+
+    Store:
+      type: object
+      required:
+        - id
+        - org_id
+        - store_code
+        - name
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        store_code:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 255
+        address:
+          type: string
+          maxLength: 500
+        area:
+          type: string
+          maxLength: 100
+        emitter_no:
+          type: string
+          maxLength: 50
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+        updated_by:
+          type: string
+          format: uuid
+        deleted_at:
+          type: string
+          format: date-time
+
+    ItemMap:
+      type: object
+      required:
+        - id
+        - org_id
+        - item_label
+        - jwnet_code
+        - hazard
+        - default_unit
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        item_label:
+          type: string
+          maxLength: 255
+        jwnet_code:
+          type: string
+          maxLength: 50
+        hazard:
+          type: boolean
+          default: false
+        default_unit:
+          $ref: '#/components/schemas/Unit'
+          default: T
+        density_t_per_m3:
+          type: number
+          minimum: 0
+        disposal_method_code:
+          type: string
+          maxLength: 50
+        notes:
+          type: string
+          maxLength: 1000
+        created_at:
+          type: string
+          format: date-time
+
+    Plan:
+      type: object
+      required:
+        - id
+        - org_id
+        - store_id
+        - planned_date
+        - item_map_id
+        - planned_qty
+        - unit
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        store_id:
+          type: string
+          format: uuid
+        planned_date:
+          type: string
+          format: date
+        item_map_id:
+          type: string
+          format: uuid
+        planned_qty:
+          type: number
+          minimum: 0
+        unit:
+          $ref: '#/components/schemas/Unit'
+          default: T
+        earliest_pickup_date:
+          type: string
+          format: date
+        route_id:
+          type: string
+          maxLength: 100
+        split_group:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+
+    Reservation:
+      type: object
+      required:
+        - id
+        - org_id
+        - plan_id
+        - payload_hash
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+          format: uuid
+        jwnet_temp_id:
+          type: string
+          maxLength: 100
+        payload_hash:
+          type: string
+        status:
+          $ref: '#/components/schemas/RegStatus'
+          default: PENDING
+        last_sent_at:
+          type: string
+          format: date-time
+        error_code:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+
+    Actual:
+      type: object
+      required:
+        - id
+        - org_id
+        - plan_id
+        - actual_qty
+        - unit
+        - confirmed_at
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+          format: uuid
+        actual_qty:
+          type: number
+          minimum: 0
+        unit:
+          $ref: '#/components/schemas/Unit'
+          default: T
+        vehicle_no:
+          type: string
+          maxLength: 50
+        driver_name:
+          type: string
+          maxLength: 100
+        weighing_ticket_no:
+          type: string
+          maxLength: 100
+        photo_urls:
+          type: array
+          items:
+            type: string
+            format: uri
+        confirmed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    Registration:
+      type: object
+      required:
+        - id
+        - org_id
+        - plan_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+          format: uuid
+        manifest_no:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/RegStatus'
+          default: PENDING
+        error_code:
+          type: string
+          maxLength: 100
+        last_sent_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    StoreManifestView:
+      type: object
+      properties:
+        store_code:
+          type: string
+        store_name:
+          type: string
+        area_or_city:
+          type: string
+        pickup_date:
+          type: string
+          format: date
+        route_id:
+          type: string
+        item_label:
+          type: string
+        planned_qty:
+          type: number
+        actual_qty:
+          type: number
+        unit:
+          $ref: '#/components/schemas/Unit'
+        jwnet_reservation_id:
+          type: string
+        jwnet_manifest_no:
+          type: string
+        transporter_name:
+          type: string
+        vehicle_no:
+          type: string
+        driver_name:
+          type: string
+        weighing_ticket_no:
+          type: string
+        photo_urls:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        error_code:
+          type: string
+        last_updated_at:
+          type: string
+          format: date-time
+
+    IngestPlansRequest:
+      type: object
+      required:
+        - rows
+      properties:
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    IngestPlansResponse:
+      type: object
+      required:
+        - ok
+        - processed
+      properties:
+        ok:
+          type: boolean
+        processed:
+          type: integer
+          minimum: 0
+
+    SendReservationsResponse:
+      type: object
+      required:
+        - ok
+        - sent
+      properties:
+        ok:
+          type: boolean
+        sent:
+          type: integer
+          minimum: 0
+
+    CommitRegistrationsResponse:
+      type: object
+      required:
+        - ok
+        - sent
+      properties:
+        ok:
+          type: boolean
+        sent:
+          type: integer
+          minimum: 0
+
+tags:
+  - name: Organizations
+    description: 組織管理
+  - name: Stores
+    description: 店舗管理
+  - name: ItemMaps
+    description: 品目マッピング管理
+  - name: Plans
+    description: 予定管理
+  - name: Reservations
+    description: 予約管理
+  - name: Actuals
+    description: 実績管理
+  - name: Registrations
+    description: 本登録管理
+  - name: Reports
+    description: レポート・CSV出力
+
