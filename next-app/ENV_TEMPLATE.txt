@@ -1,0 +1,69 @@
+# ============================================
+# 🔐 環境変数設定テンプレート
+# ============================================
+# このファイルの内容を .env.local にコピーして、
+# [YOUR-XXX] の部分を実際の値に置き換えてください
+# ============================================
+
+# ============================================
+# 🗄️ データベース接続（必須）
+# ============================================
+# 📍 取得場所: Supabase Dashboard > Settings > Database > Connection string > URI
+# ⚠️ [YOUR-PASSWORD] を実際のデータベースパスワードに置き換えてください
+#
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?pgbouncer=true&connection_limit=1"
+
+
+# ============================================
+# 🔑 Supabase 公開キー（必須）
+# ============================================
+# 📍 取得場所: Supabase Dashboard > Settings > API > Project URL
+#
+NEXT_PUBLIC_SUPABASE_URL="https://[YOUR-PROJECT-REF].supabase.co"
+
+# 📍 取得場所: Supabase Dashboard > Settings > API > Project API keys > anon public
+#
+NEXT_PUBLIC_SUPABASE_ANON_KEY="[YOUR-ANON-KEY]"
+
+
+# ============================================
+# 🔐 Supabase サービスロールキー（必須・秘密！）
+# ============================================
+# 📍 取得場所: Supabase Dashboard > Settings > API > Project API keys > service_role
+# ⚠️ 警告: このキーは絶対に公開しないでください！
+#
+SUPABASE_SERVICE_ROLE_KEY="[YOUR-SERVICE-ROLE-KEY]"
+
+
+# ============================================
+# 🌐 アプリケーション URL
+# ============================================
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+
+# ============================================
+# 🛠️ 開発環境設定
+# ============================================
+NODE_ENV="development"
+
+
+# ============================================
+# 📖 記入例（参考用）
+# ============================================
+# DATABASE_URL="postgresql://postgres:MySecretPassword123@db.abcdefghijk.supabase.co:5432/postgres?pgbouncer=true&connection_limit=1"
+# NEXT_PUBLIC_SUPABASE_URL="https://abcdefghijk.supabase.co"
+# NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MjMwMDAwMDAsImV4cCI6MTk1MzAwMDAwMH0.ACTUAL_KEY"
+# SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYyMzAwMDAwMCwiZXhwIjoxOTUzMDAwMDAwfQ.ACTUAL_KEY"
+
+
+# ============================================
+# ✅ 設定後のステップ
+# ============================================
+# 1. このファイルの内容を .env.local にコピー
+# 2. [YOUR-XXX] を実際の値に置き換え
+# 3. ファイルを保存
+# 4. ターミナルで: pnpm prisma generate
+# 5. ターミナルで: pnpm dev
+# 6. ブラウザで: http://localhost:3000/api/health
+# ============================================
+
