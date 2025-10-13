@@ -317,6 +317,11 @@ model WasteTypeMaster {
   unit_price            Float?    @db.Real         // 単価（請求用）
   description           String?   @db.Text
   is_active             Boolean   @default(true)
+  
+  // ✨ Phase 5: 請求書Excel出力用の分類フィールド
+  billing_category      String?   @db.VarChar(20)  // Excel列分類: 'D'~'J', 'M', 'OTHER'
+  billing_type_default  String?   @db.VarChar(20)  // デフォルト請求種別: 'FIXED' | 'METERED' | 'OTHER'
+  
   created_at            DateTime  @default(now()) @db.Timestamptz(6)
   updated_at            DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
   created_by            String?   @db.Uuid
@@ -331,6 +336,7 @@ model WasteTypeMaster {
   @@index([collector_id])
   @@index([jwnet_waste_code])
   @@index([is_active])
+  @@index([billing_category])
   @@map("waste_type_masters")
   @@schema("app")
 }

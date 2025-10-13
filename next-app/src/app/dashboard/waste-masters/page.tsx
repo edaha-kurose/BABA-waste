@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * 廃棄物マスター管理ページ
+ * 廃棄物マスター管理ページ（修正版）
  * 
- * - JWNET 廃棄物コード一覧
- * - 廃棄物種別マスター管理（収集業者ごと）
+ * ✅ billing_category（Excel出力列分類）フィールド追加
+ * ✅ billing_type_default（デフォルト請求種別）フィールド追加
  */
 
 import { useState, useEffect } from 'react';
@@ -21,23 +21,12 @@ import {
   message,
   Tabs,
   Tag,
+  Alert,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
 const { TabPane } = Tabs;
-
-interface JwnetWasteCode {
-  id: string;
-  waste_code: string;
-  waste_name: string;
-  waste_category: string;
-  waste_type: string;
-  unit_code: string;
-  unit_name: string;
-  is_active: boolean;
-  created_at: string;
-}
 
 interface WasteTypeMaster {
   id: string;
@@ -51,48 +40,42 @@ interface WasteTypeMaster {
   jwnet_waste_code: string;
   unit_code: string;
   unit_price: number | null;
+  billing_category: string | null;        // ✨ 新規
+  billing_type_default: string | null;    // ✨ 新規
   description: string | null;
   is_active: boolean;
   created_at: string;
-  jwnetWasteCode?: {
-    id: string;
-    waste_code: string;
-    waste_name: string;
-    waste_category: string;
-    unit_code: string;
-    unit_name: string;
-  };
 }
 
+// 請求書出力列分類のオプション (ABC列は不使用、D列から)
+const BILLING_CATEGORY_OPTIONS = [
+  { value: 'F', label: 'F列: システム管理手数料', color: 'gold' },
+  { value: 'G', label: 'G列: 一般廃棄物請求金額', color: 'green' },
+  { value: 'H', label: 'H列: 産業廃棄物請求金額', color: 'orange' },
+  { value: 'I', label: 'I列: 瓶・缶請求金額', color: 'blue' },
+  { value: 'J', label: 'J列: 臨時回収請求金額', color: 'purple' },
+  { value: 'M', label: 'M列: 段ボール（有価買取分）', color: 'cyan' },
+  { value: 'OTHER', label: 'その他（F列に含める）', color: 'default' },
+];
+
+// 請求種別のオプション
+const BILLING_TYPE_OPTIONS = [
+  { value: 'FIXED', label: '固定（月額固定）' },
+  { value: 'METERED', label: '従量（実績ベース）' },
+  { value: 'OTHER', label: 'その他' },
+];
+
 export default function WasteMastersPage() {
-  const [jwnetWasteCodes, setJwnetWasteCodes] = useState<JwnetWasteCode[]>([]);
   const [wasteTypeMasters, setWasteTypeMasters] = useState<WasteTypeMaster[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedCollectorId, setSelectedCollectorId] = useState<string>('');
+  const [editingRecord, setEditingRecord] = useState<WasteTypeMaster | null>(null);
+  const [selectedCollectorId, setSelectedCollectorId] = useState<string>('collector-1');
   const [form] = Form.useForm();
 
   // Mock: 組織ID（実際はログインユーザーから取得）
   const orgId = 'mock-org-id';
-
-  // JWNET 廃棄物コードを取得
-  const fetchJwnetWasteCodes = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/jwnet-waste-codes');
-      if (!response.ok) {
-        throw new Error('Failed to fetch JWNET waste codes');
-      }
-      const data = await response.json();
-      setJwnetWasteCodes(data);
-    } catch (error) {
-      console.error('Error fetching JWNET waste codes:', error);
-      message.error('JWNET廃棄物コードの取得に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // 廃棄物種別マスターを取得
   const fetchWasteTypeMasters = async () => {
@@ -116,298 +99,368 @@ export default function WasteMastersPage() {
     }
   };
 
-  // 初期読み込み
   useEffect(() => {
-    fetchJwnetWasteCodes();
-  }, []);
-
-  useEffect(() => {
-    if (selectedCollectorId) {
-      fetchWasteTypeMasters();
-    }
+    fetchWasteTypeMasters();
   }, [selectedCollectorId]);
 
-  // 廃棄物種別マスター新規作成
-  const handleCreateWasteTypeMaster = () => {
-    if (!selectedCollectorId) {
-      message.warning('収集業者を選択してください');
-      return;
-    }
-    setModalMode('create');
-    form.resetFields();
+  // モーダルを開く
+  const openModal = (mode: 'create' | 'edit', record?: WasteTypeMaster) => {
+    setModalMode(mode);
     setIsModalOpen(true);
+
+    if (mode === 'edit' && record) {
+      setEditingRecord(record);
+      form.setFieldsValue({
+        waste_type_code: record.waste_type_code,
+        waste_type_name: record.waste_type_name,
+        waste_category: record.waste_category,
+        waste_classification: record.waste_classification,
+        jwnet_waste_code: record.jwnet_waste_code,
+        unit_code: record.unit_code,
+        unit_price: record.unit_price,
+        billing_category: record.billing_category,           // ✨ 新規
+        billing_type_default: record.billing_type_default,   // ✨ 新規
+        description: record.description,
+        is_active: record.is_active,
+      });
+    } else {
+      form.resetFields();
+    }
   };
 
-  // フォーム送信
-  const handleFormSubmit = async (values: any) => {
-    setLoading(true);
-    try {
-      const selectedJwnetCode = jwnetWasteCodes.find((code) => code.id === values.jwnet_waste_code_id);
+  // モーダルを閉じる
+  const closeModal = () => {
+    setIsModalOpen(false);
+    form.resetFields();
+    setEditingRecord(null);
+  };
 
-      const response = await fetch('/api/waste-type-masters', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          org_id: orgId,
-          collector_id: selectedCollectorId,
-          waste_type_code: values.waste_type_code,
-          waste_type_name: values.waste_type_name,
-          waste_category: values.waste_category,
-          waste_classification: values.waste_classification,
-          jwnet_waste_code_id: values.jwnet_waste_code_id,
-          jwnet_waste_code: selectedJwnetCode?.waste_code || '',
-          unit_code: selectedJwnetCode?.unit_code || '',
-          unit_price: values.unit_price,
-          description: values.description,
-          is_active: true,
-        }),
+  // 作成・更新
+  const handleSubmit = async (values: any) => {
+    try {
+      const url =
+        modalMode === 'create'
+          ? '/api/waste-type-masters'
+          : `/api/waste-type-masters/${editingRecord?.id}`;
+
+      const method = modalMode === 'create' ? 'POST' : 'PATCH';
+
+      const payload = {
+        ...values,
+        org_id: orgId,
+        collector_id: selectedCollectorId,
+      };
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create waste type master');
+        throw new Error(`Failed to ${modalMode} waste type master`);
       }
 
-      message.success('廃棄物種別マスターを作成しました');
-      setIsModalOpen(false);
-      form.resetFields();
+      message.success(
+        modalMode === 'create'
+          ? '廃棄物種別マスターを作成しました'
+          : '廃棄物種別マスターを更新しました'
+      );
+      closeModal();
       fetchWasteTypeMasters();
     } catch (error) {
-      console.error('Error creating waste type master:', error);
-      message.error('廃棄物種別マスターの作成に失敗しました');
-    } finally {
-      setLoading(false);
+      console.error(`Error ${modalMode} waste type master:`, error);
+      message.error(
+        modalMode === 'create'
+          ? '廃棄物種別マスターの作成に失敗しました'
+          : '廃棄物種別マスターの更新に失敗しました'
+      );
     }
   };
 
-  // JWNET 廃棄物コードのカラム
-  const jwnetColumns: ColumnsType<JwnetWasteCode> = [
-    {
-      title: '廃棄物コード',
-      dataIndex: 'waste_code',
-      key: 'waste_code',
-      width: 120,
-    },
-    {
-      title: '廃棄物名',
-      dataIndex: 'waste_name',
-      key: 'waste_name',
-      width: 200,
-    },
-    {
-      title: '分類',
-      dataIndex: 'waste_category',
-      key: 'waste_category',
-      width: 150,
-    },
-    {
-      title: '種類',
-      dataIndex: 'waste_type',
-      key: 'waste_type',
-      width: 150,
-    },
-    {
-      title: '単位',
-      dataIndex: 'unit_name',
-      key: 'unit_name',
-      width: 80,
-      render: (text: string, record) => `${text} (${record.unit_code})`,
-    },
-    {
-      title: 'ステータス',
-      dataIndex: 'is_active',
-      key: 'is_active',
-      width: 100,
-      render: (isActive: boolean) => (
-        <Tag color={isActive ? 'green' : 'default'}>{isActive ? '有効' : '無効'}</Tag>
-      ),
-    },
-  ];
+  // 削除
+  const handleDelete = async (id: string) => {
+    Modal.confirm({
+      title: '削除確認',
+      content: 'この廃棄物種別マスターを削除してもよろしいですか？',
+      okText: '削除',
+      okType: 'danger',
+      cancelText: 'キャンセル',
+      onOk: async () => {
+        try {
+          const response = await fetch(`/api/waste-type-masters/${id}`, {
+            method: 'DELETE',
+          });
 
-  // 廃棄物種別マスターのカラム
-  const wasteTypeMasterColumns: ColumnsType<WasteTypeMaster> = [
+          if (!response.ok) {
+            throw new Error('Failed to delete waste type master');
+          }
+
+          message.success('廃棄物種別マスターを削除しました');
+          fetchWasteTypeMasters();
+        } catch (error) {
+          console.error('Error deleting waste type master:', error);
+          message.error('廃棄物種別マスターの削除に失敗しました');
+        }
+      },
+    });
+  };
+
+  // テーブル列定義
+  const columns: ColumnsType<WasteTypeMaster> = [
     {
-      title: '廃棄物コード',
+      title: '社内コード',
       dataIndex: 'waste_type_code',
       key: 'waste_type_code',
       width: 120,
     },
     {
-      title: '廃棄物名',
+      title: '廃棄物名称',
       dataIndex: 'waste_type_name',
       key: 'waste_type_name',
       width: 200,
     },
     {
-      title: 'JWNET廃棄物コード',
-      dataIndex: ['jwnetWasteCode', 'waste_code'],
-      key: 'jwnet_waste_code',
+      title: '✨ 請求書分類',
+      dataIndex: 'billing_category',
+      key: 'billing_category',
       width: 150,
+      render: (value: string | null) => {
+        const option = BILLING_CATEGORY_OPTIONS.find((opt) => opt.value === value);
+        if (!option) return <Tag>未設定</Tag>;
+        return <Tag color={option.color}>{option.value}列</Tag>;
+      },
     },
     {
-      title: 'JWNET廃棄物名',
-      dataIndex: ['jwnetWasteCode', 'waste_name'],
-      key: 'jwnet_waste_name',
-      width: 200,
+      title: '✨ デフォルト請求種別',
+      dataIndex: 'billing_type_default',
+      key: 'billing_type_default',
+      width: 150,
+      render: (value: string | null) => {
+        if (!value) return <Tag>未設定</Tag>;
+        const color =
+          value === 'FIXED' ? 'green' : value === 'METERED' ? 'blue' : 'default';
+        const label = value === 'FIXED' ? '固定' : value === 'METERED' ? '従量' : 'その他';
+        return <Tag color={color}>{label}</Tag>;
+      },
+    },
+    {
+      title: 'カテゴリー',
+      dataIndex: 'waste_category',
+      key: 'waste_category',
+      width: 120,
+    },
+    {
+      title: 'JWNETコード',
+      dataIndex: 'jwnet_waste_code',
+      key: 'jwnet_waste_code',
+      width: 120,
     },
     {
       title: '単価',
       dataIndex: 'unit_price',
       key: 'unit_price',
-      width: 100,
-      align: 'right',
-      render: (price: number | null) => (price ? `¥${price.toLocaleString()}` : '-'),
-    },
-    {
-      title: '単位',
-      dataIndex: 'unit_code',
-      key: 'unit_code',
-      width: 80,
+      width: 120,
+      render: (value: number | null) => (value ? `¥${value.toLocaleString()}` : '-'),
     },
     {
       title: 'ステータス',
       dataIndex: 'is_active',
       key: 'is_active',
       width: 100,
-      render: (isActive: boolean) => (
-        <Tag color={isActive ? 'green' : 'default'}>{isActive ? '有効' : '無効'}</Tag>
+      render: (value: boolean) => (
+        <Tag color={value ? 'green' : 'red'}>{value ? '有効' : '無効'}</Tag>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 150,
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => openModal('edit', record)}
+          >
+            編集
+          </Button>
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+          >
+            削除
+          </Button>
+        </Space>
       ),
     },
   ];
 
   return (
     <div style={{ padding: '24px' }}>
-      <h1>
-        <SearchOutlined /> 廃棄物マスター管理
-      </h1>
+      <h1 style={{ fontSize: 24, marginBottom: 16 }}>廃棄物マスター管理</h1>
 
-      <Tabs defaultActiveKey="jwnet">
-        {/* JWNET 廃棄物コード */}
-        <TabPane tab="JWNET 廃棄物コード" key="jwnet">
-          <Card>
-            <Table
-              columns={jwnetColumns}
-              dataSource={jwnetWasteCodes}
-              rowKey="id"
-              loading={loading}
-              pagination={{ pageSize: 20 }}
-              scroll={{ x: 1000 }}
-            />
-          </Card>
-        </TabPane>
+      {/* ✨ 説明 */}
+      <Alert
+        message="請求書Excel出力用の分類設定"
+        description="各廃棄物の請求書出力時の列（G列、H列など）と、デフォルトの請求種別（固定/従量）を設定できます。"
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+      />
 
-        {/* 廃棄物種別マスター */}
-        <TabPane tab="廃棄物種別マスター（収集業者用）" key="waste-type">
-          <Card
-            extra={
-              <Space>
-                <Select
-                  style={{ width: 200 }}
-                  placeholder="収集業者を選択"
-                  value={selectedCollectorId || undefined}
-                  onChange={setSelectedCollectorId}
-                >
-                  <Select.Option value="collector-1">収集業者A</Select.Option>
-                  <Select.Option value="collector-2">収集業者B</Select.Option>
-                  <Select.Option value="collector-3">収集業者C</Select.Option>
-                </Select>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleCreateWasteTypeMaster}
-                  disabled={!selectedCollectorId}
-                >
-                  新規作成
-                </Button>
-              </Space>
-            }
+      {/* 収集業者選択 */}
+      <Card style={{ marginBottom: 16 }}>
+        <Space>
+          <label>収集業者:</label>
+          <Select
+            style={{ width: 200 }}
+            value={selectedCollectorId}
+            onChange={setSelectedCollectorId}
           >
-            <Table
-              columns={wasteTypeMasterColumns}
-              dataSource={wasteTypeMasters}
-              rowKey="id"
-              loading={loading}
-              pagination={{ pageSize: 20 }}
-              scroll={{ x: 1200 }}
-            />
-          </Card>
-        </TabPane>
-      </Tabs>
+            <Select.Option value="collector-1">収集業者A</Select.Option>
+            <Select.Option value="collector-2">収集業者B</Select.Option>
+            <Select.Option value="collector-3">収集業者C</Select.Option>
+          </Select>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => openModal('create')}
+          >
+            新規作成
+          </Button>
+        </Space>
+      </Card>
 
-      {/* 新規作成モーダル */}
+      {/* テーブル */}
+      <Card>
+        <Table
+          columns={columns}
+          dataSource={wasteTypeMasters}
+          rowKey="id"
+          loading={loading}
+          pagination={{ pageSize: 20 }}
+          scroll={{ x: 1500 }}
+        />
+      </Card>
+
+      {/* モーダル */}
       <Modal
-        title="廃棄物種別マスター新規作成"
+        title={modalMode === 'create' ? '廃棄物種別マスター新規作成' : '廃棄物種別マスター編集'}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={closeModal}
         onOk={() => form.submit()}
-        okText="作成"
+        width={800}
+        okText={modalMode === 'create' ? '作成' : '更新'}
         cancelText="キャンセル"
-        width={700}
       >
-        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            label="廃棄物コード"
             name="waste_type_code"
-            rules={[{ required: true, message: '廃棄物コードを入力してください' }]}
+            label="社内廃棄物コード"
+            rules={[{ required: true, message: '社内廃棄物コードを入力してください' }]}
           >
             <Input placeholder="例: W001" />
           </Form.Item>
 
           <Form.Item
-            label="廃棄物名"
             name="waste_type_name"
-            rules={[{ required: true, message: '廃棄物名を入力してください' }]}
+            label="廃棄物名称"
+            rules={[{ required: true, message: '廃棄物名称を入力してください' }]}
           >
-            <Input placeholder="例: 一般廃棄物（可燃）" />
+            <Input placeholder="例: 一般廃棄物（可燃ゴミ）" />
           </Form.Item>
 
+          {/* ✨ 新規: 請求書分類 */}
           <Form.Item
-            label="JWNET廃棄物コード"
-            name="jwnet_waste_code_id"
-            rules={[{ required: true, message: 'JWNET廃棄物コードを選択してください' }]}
+            name="billing_category"
+            label="✨ 請求書出力列分類"
+            rules={[{ required: true, message: '請求書出力列分類を選択してください' }]}
+            tooltip="Excel出力時にどの列に表示するかを設定します"
           >
-            <Select
-              placeholder="JWNET廃棄物コードを選択"
-              showSearch
-              optionFilterProp="children"
-            >
-              {jwnetWasteCodes.map((code) => (
-                <Select.Option key={code.id} value={code.id}>
-                  {code.waste_code} - {code.waste_name}
+            <Select placeholder="分類を選択">
+              {BILLING_CATEGORY_OPTIONS.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  <Tag color={option.color}>{option.label}</Tag>
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          {/* ✨ 新規: デフォルト請求種別 */}
+          <Form.Item
+            name="billing_type_default"
+            label="✨ デフォルト請求種別"
+            rules={[{ required: true, message: 'デフォルト請求種別を選択してください' }]}
+            tooltip="この廃棄物の通常の請求方法を設定します（固定/従量/その他）"
+          >
+            <Select placeholder="請求種別を選択">
+              {BILLING_TYPE_OPTIONS.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  {option.label}
                 </Select.Option>
               ))}
             </Select>
           </Form.Item>
 
           <Form.Item
-            label="廃棄物分類"
             name="waste_category"
-            rules={[{ required: true, message: '廃棄物分類を入力してください' }]}
+            label="カテゴリー"
+            rules={[{ required: true, message: 'カテゴリーを入力してください' }]}
           >
             <Input placeholder="例: 一般廃棄物" />
           </Form.Item>
 
           <Form.Item
-            label="廃棄物区分"
             name="waste_classification"
-            rules={[{ required: true, message: '廃棄物区分を入力してください' }]}
+            label="分類"
+            rules={[{ required: true, message: '分類を入力してください' }]}
           >
-            <Input placeholder="例: 可燃ごみ" />
+            <Input placeholder="例: 可燃ゴミ" />
           </Form.Item>
 
-          <Form.Item label="単価（円）" name="unit_price">
+          <Form.Item
+            name="jwnet_waste_code"
+            label="JWNETコード"
+            rules={[{ required: true, message: 'JWNETコードを入力してください' }]}
+          >
+            <Input placeholder="例: 01" />
+          </Form.Item>
+
+          <Form.Item
+            name="unit_code"
+            label="単位コード"
+            rules={[{ required: true, message: '単位コードを入力してください' }]}
+          >
+            <Select placeholder="単位を選択">
+              <Select.Option value="KG">KG</Select.Option>
+              <Select.Option value="T">T</Select.Option>
+              <Select.Option value="M3">M3</Select.Option>
+              <Select.Option value="L">L</Select.Option>
+              <Select.Option value="PCS">PCS</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item name="unit_price" label="単価（円）">
             <InputNumber
               style={{ width: '100%' }}
               min={0}
-              placeholder="例: 5000"
+              placeholder="例: 500"
               formatter={(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={(value) => value!.replace(/¥\s?|(,*)/g, '')}
             />
           </Form.Item>
 
-          <Form.Item label="説明" name="description">
-            <Input.TextArea rows={3} placeholder="廃棄物の説明（任意）" />
+          <Form.Item name="description" label="説明">
+            <Input.TextArea rows={3} placeholder="備考・説明を入力" />
+          </Form.Item>
+
+          <Form.Item name="is_active" label="ステータス" initialValue={true}>
+            <Select>
+              <Select.Option value={true}>有効</Select.Option>
+              <Select.Option value={false}>無効</Select.Option>
+            </Select>
           </Form.Item>
         </Form>
       </Modal>

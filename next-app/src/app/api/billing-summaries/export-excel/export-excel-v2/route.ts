@@ -1,9 +1,10 @@
 /**
- * 請求書 Excel 出力 API
+ * 請求書 Excel 出力 API（修正版）
  * 
- * POST /api/billing-summaries/export-excel
+ * POST /api/billing-summaries/export-excel-v2
  * 
  * BABA請求書フォーマットに準拠した Excel 出力
+ * ✅ 廃棄物マスターの billing_category に基づいて分類
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -24,17 +25,17 @@ const ExportExcelSchema = z.object({
 interface StoreBillingData {
   store_code: string;
   store_name: string;
-  system_fee: number;              // F列: システム管理会社の管理手数料（OTHER）
-  general_waste: number;           // G列: 一般廃棄物請求金額（FIXED）
+  system_fee: number;              // F列: システム管理会社の管理手数料
+  general_waste: number;           // G列: 一般廃棄物請求金額
   industrial_waste: number;        // H列: 産業廃棄物請求金額
   bottle_can: number;              // I列: 瓶・缶請求金額
-  temporary_collection: number;    // J列: 臨時回収請求金額（METERED）
+  temporary_collection: number;    // J列: 臨時回収請求金額
   subtotal: number;                // K列: 小計
   tax: number;                     // L列: 消費税
   cardboard_buyback: number;       // M列: 段ボール（有価買取分 - マイナス値）
 }
 
-// POST /api/billing-summaries/export-excel - Excel出力
+// POST /api/billing-summaries/export-excel-v2 - Excel出力（修正版）
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
       month: 'long',
     });
 
-    // 請求明細を取得
+    // ✅ 修正: 請求明細を取得（廃棄物マスター情報を含む）
     const billingItems = await prisma.billingItem.findMany({
       where: {
         org_id: validatedData.org_id,
@@ -58,6 +59,9 @@ export async function POST(request: NextRequest) {
           not: 'CANCELLED',
         },
         deleted_at: null,
+      },
+      include: {
+        wasteTypeMaster: true,  // ✅ 廃棄物マスター情報を取得
       },
       orderBy: {
         store_id: 'asc',
@@ -110,30 +114,38 @@ export async function POST(request: NextRequest) {
 
       const storeData = storeBillingMap.get(storeId)!;
 
-      // 請求種別ごとに金額を振り分け
-      switch (item.billing_type) {
-        case 'FIXED':
-          // 一般廃棄物請求金額（月額固定請求分）
+      // ✅ 修正: 廃棄物マスターの billing_category に基づいて振り分け
+      const billingCategory = item.wasteTypeMaster?.billing_category || 'OTHER';
+
+      switch (billingCategory) {
+        case 'F':
+          // F列: システム管理会社の管理手数料
+          storeData.system_fee += item.amount;
+          break;
+        case 'G':
+          // G列: 一般廃棄物請求金額
           storeData.general_waste += item.amount;
           break;
-        case 'METERED':
-          // 臨時回収請求金額（実績回収分）
+        case 'H':
+          // H列: 産業廃棄物請求金額
+          storeData.industrial_waste += item.amount;
+          break;
+        case 'I':
+          // I列: 瓶・缶請求金額
+          storeData.bottle_can += item.amount;
+          break;
+        case 'J':
+          // J列: 臨時回収請求金額（実績回収分）
           storeData.temporary_collection += item.amount;
           break;
+        case 'M':
+          // M列: 段ボール（有価買取分）- マイナス値
+          storeData.cardboard_buyback += Math.abs(item.amount) * -1;
+          break;
         case 'OTHER':
-          // その他費用（システム管理手数料など）
-          if (item.item_name.includes('管理手数料') || item.item_name.includes('システム')) {
-            storeData.system_fee += item.amount;
-          } else if (item.item_name.includes('産業廃棄物')) {
-            storeData.industrial_waste += item.amount;
-          } else if (item.item_name.includes('瓶') || item.item_name.includes('缶')) {
-            storeData.bottle_can += item.amount;
-          } else if (item.item_name.includes('段ボール') || item.item_name.includes('買取')) {
-            // 段ボール（有価買取分）はマイナス値
-            storeData.cardboard_buyback += Math.abs(item.amount) * -1;
-          } else {
-            storeData.system_fee += item.amount;
-          }
+        default:
+          // その他は F列（システム手数料）に含める
+          storeData.system_fee += item.amount;
           break;
       }
 
@@ -274,7 +286,7 @@ export async function POST(request: NextRequest) {
     const buffer = await workbook.xlsx.writeBuffer();
 
     // ファイル名生成
-    const fileName = `請求書_${monthStr}.xlsx`;
+    const fileName = `請求書_${monthStr}_v2.xlsx`;
 
     // レスポンスヘッダー設定
     const headers = new Headers();
@@ -286,7 +298,7 @@ export async function POST(request: NextRequest) {
       headers,
     });
   } catch (error) {
-    console.error('[Billing Export Excel] POST error:', error);
+    console.error('[Billing Export Excel V2] POST error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
