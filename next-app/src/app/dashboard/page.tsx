@@ -1,118 +1,146 @@
-import { Card, Col, Row, Statistic, Typography } from 'antd'
+'use client'
+
+import { Row, Col, Card, Statistic, Table, Tag } from 'antd'
 import {
   ShopOutlined,
-  FileTextOutlined,
+  CalendarOutlined,
   CheckCircleOutlined,
-  TeamOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons'
 
-const { Title, Paragraph } = Typography
-
 export default function DashboardPage() {
-  // TODO: APIからデータを取得（Server Componentsで）
-  const stats = {
-    organizations: 5,
-    stores: 42,
-    plans: 128,
-    collections: 89,
-  }
+  // サンプルデータ
+  const recentCollections = [
+    {
+      key: '1',
+      date: '2025-10-13',
+      store: '店舗A',
+      item: '一般廃棄物',
+      quantity: '150 KG',
+      status: 'COMPLETED',
+    },
+    {
+      key: '2',
+      date: '2025-10-12',
+      store: '店舗B',
+      item: '産業廃棄物',
+      quantity: '200 KG',
+      status: 'COMPLETED',
+    },
+    {
+      key: '3',
+      date: '2025-10-11',
+      store: '店舗C',
+      item: '資源ごみ',
+      quantity: '80 KG',
+      status: 'PENDING',
+    },
+  ]
+
+  const columns = [
+    {
+      title: '日付',
+      dataIndex: 'date',
+      key: 'date',
+    },
+    {
+      title: '店舗',
+      dataIndex: 'store',
+      key: 'store',
+    },
+    {
+      title: '品目',
+      dataIndex: 'item',
+      key: 'item',
+    },
+    {
+      title: '数量',
+      dataIndex: 'quantity',
+      key: 'quantity',
+    },
+    {
+      title: 'ステータス',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => (
+        <Tag color={status === 'COMPLETED' ? 'green' : 'orange'}>
+          {status === 'COMPLETED' ? '完了' : '処理中'}
+        </Tag>
+      ),
+    },
+  ]
 
   return (
-    <div className="p-6">
-      <Title level={2}>ダッシュボード</Title>
-      <Paragraph>廃棄物管理システムの概要</Paragraph>
+    <div>
+      <h1 style={{ fontSize: 24, marginBottom: 24 }}>ダッシュボード</h1>
 
-      <Row gutter={[16, 16]} className="mt-6">
-        <Col xs={24} sm={12} lg={6}>
+      {/* 統計カード */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col span={6}>
           <Card>
             <Statistic
-              title="組織数"
-              value={stats.organizations}
-              prefix={<TeamOutlined />}
+              title="登録店舗数"
+              value={28}
+              prefix={<ShopOutlined />}
               valueStyle={{ color: '#3f8600' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col span={6}>
           <Card>
             <Statistic
-              title="店舗数"
-              value={stats.stores}
-              prefix={<ShopOutlined />}
+              title="今月の収集予定"
+              value={45}
+              prefix={<CalendarOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col span={6}>
           <Card>
             <Statistic
-              title="収集予定"
-              value={stats.plans}
-              prefix={<FileTextOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="収集実績"
-              value={stats.collections}
+              title="今月の収集実績"
+              value={38}
               prefix={<CheckCircleOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
         </Col>
-      </Row>
-
-      <Row gutter={[16, 16]} className="mt-6">
-        <Col xs={24} lg={12}>
-          <Card title="最近の活動">
-            <ul className="space-y-2">
-              <li>✅ 組織「テスト株式会社」を作成しました</li>
-              <li>📍 店舗「渋谷店」を登録しました</li>
-              <li>📝 収集予定を5件登録しました</li>
-              <li>🚚 収集実績を3件記録しました</li>
-            </ul>
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card title="システム情報">
-            <dl className="space-y-2">
-              <div>
-                <dt className="font-semibold">バージョン</dt>
-                <dd className="text-gray-600">0.1.0</dd>
-              </div>
-              <div>
-                <dt className="font-semibold">環境</dt>
-                <dd className="text-gray-600">開発環境</dd>
-              </div>
-              <div>
-                <dt className="font-semibold">データベース</dt>
-                <dd className="text-gray-600">Supabase PostgreSQL</dd>
-              </div>
-              <div>
-                <dt className="font-semibold">API</dt>
-                <dd className="text-green-600">✓ 正常稼働中</dd>
-              </div>
-            </dl>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="未処理の依頼"
+              value={7}
+              prefix={<FileTextOutlined />}
+              valueStyle={{ color: '#cf1322' }}
+            />
           </Card>
         </Col>
       </Row>
 
-      <div className="mt-8 p-6 bg-blue-50 rounded-lg">
-        <Title level={4}>🚀 Phase 2 進行中</Title>
-        <ul className="list-disc list-inside space-y-1 mt-2">
-          <li>✅ Next.js 14 + Prisma セットアップ完了</li>
-          <li>✅ Organizations API 完成</li>
-          <li>✅ Stores API 完成</li>
-          <li>✅ Plans API 完成</li>
-          <li>✅ Collections API 完成</li>
-          <li>🔄 ダッシュボードUI 構築中</li>
-          <li>⏳ 認証・認可統合</li>
+      {/* 最近の収集実績 */}
+      <Card title="最近の収集実績" style={{ marginBottom: 24 }}>
+        <Table
+          columns={columns}
+          dataSource={recentCollections}
+          pagination={false}
+        />
+      </Card>
+
+      {/* お知らせ */}
+      <Card title="お知らせ">
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          <li style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
+            <strong>2025-10-13</strong>: システムメンテナンスのお知らせ
+          </li>
+          <li style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
+            <strong>2025-10-10</strong>: 新機能リリース - 収集予定の一括登録が可能になりました
+          </li>
+          <li>
+            <strong>2025-10-05</strong>: 10月の収集スケジュールを更新しました
+          </li>
         </ul>
-      </div>
+      </Card>
     </div>
   )
 }
-
