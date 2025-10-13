@@ -14,6 +14,9 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CloudServerOutlined,
+  DollarOutlined,
+  DatabaseOutlined,
+  LinkOutlined,
 } from '@ant-design/icons'
 import { useRouter, usePathname } from 'next/navigation'
 import type { MenuProps } from 'antd'
@@ -43,6 +46,9 @@ const menuItems: MenuItem[] = [
   getItem('収集予定', '/dashboard/plans', <CalendarOutlined />),
   getItem('収集依頼', '/dashboard/collection-requests', <FileTextOutlined />),
   getItem('収集実績', '/dashboard/collections', <CheckCircleOutlined />),
+  getItem('請求管理', '/dashboard/billing', <DollarOutlined />),
+  getItem('廃棄物マスター', '/dashboard/waste-masters', <DatabaseOutlined />),
+  getItem('事業者組み合わせ', '/dashboard/jwnet-party-combinations', <LinkOutlined />),
   getItem('JWNET 連携', '/dashboard/jwnet', <CloudServerOutlined />),
   getItem('設定', '/dashboard/settings', <SettingOutlined />),
 ]
