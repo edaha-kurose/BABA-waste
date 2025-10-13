@@ -1,195 +1,145 @@
-# Seed SQL - テストデータ管理
+# Seed Data Scripts
 
-## 概要
+このディレクトリには、Supabaseデータベースに初期データを投入するためのSQLスクリプトが格納されています。
 
-開発・テスト環境用のテストデータを管理するSeedスクリプト群。
+## 📋 Seed スクリプト一覧
 
-## 実行順序
+| ファイル名 | 説明 | 依存関係 |
+|----------|------|---------|
+| `001_organizations.sql` | 組織データ | なし |
+| `002_users.sql` | ユーザーデータ | 001 |
+| `003_stores.sql` | 店舗データ | 001 |
+| `004_item_maps.sql` | 品目マッピングデータ | 001 |
+| `005_jwnet_waste_codes.sql` | JWNET廃棄物コードマスター | なし |
+| `006_waste_type_masters.sql` | 廃棄物種別マスター | 001, 005 |
+| `007_jwnet_party_combinations.sql` | JWNET事業者組み合わせマスター | 001 |
+| `999_cleanup.sql` | 全データクリーンアップ | - |
 
-**必ず以下の順序で実行してください（外部キー制約のため）:**
+## 🚀 使用方法
+
+### 1. 初回セットアップ（全データ投入）
 
 ```bash
-# Supabase SQL Editor で実行
+# Supabase SQL Editorで順番に実行
+# 1. 組織データ
+001_organizations.sql
 
-# 1. 組織（親テーブル）
-psql -f db/seed/001_organizations.sql
+# 2. ユーザーデータ
+002_users.sql
 
-# 2. ユーザー組織ロール
-psql -f db/seed/002_users.sql
-
-# 3. 店舗（排出事業場）
-psql -f db/seed/003_stores.sql
+# 3. 店舗データ
+003_stores.sql
 
 # 4. 品目マッピング
-psql -f db/seed/004_item_maps.sql
+004_item_maps.sql
 
-# クリーンアップ（必要時のみ）
-psql -f db/seed/999_cleanup.sql
+# 5. JWNET廃棄物コードマスター
+005_jwnet_waste_codes.sql
+
+# 6. 廃棄物種別マスター
+006_waste_type_masters.sql
+
+# 7. JWNET事業者組み合わせマスター
+007_jwnet_party_combinations.sql
 ```
 
-## 一括実行
+### 2. データリセット
 
 ```bash
-# 全Seed実行
-cat db/seed/001_organizations.sql \
-    db/seed/002_users.sql \
-    db/seed/003_stores.sql \
-    db/seed/004_item_maps.sql \
-  | psql $DATABASE_URL
+# 全データを削除
+999_cleanup.sql
 
-# クリーンアップ後、再実行
-psql $DATABASE_URL -f db/seed/999_cleanup.sql
-psql $DATABASE_URL -f db/seed/001_organizations.sql
-# ...
+# その後、再度001から順番に実行
 ```
 
-## Seed SQL の設計原則
+### 3. pnpm コマンド経由（推奨）
 
-### 1. 冪等性（Idempotency）
+```bash
+# package.json に定義されたスクリプトを使用
+pnpm seed:all        # 全Seedデータ投入
+pnpm seed:cleanup    # 全データクリーンアップ
+```
+
+## ⚠️ 注意事項
+
+### 実行順序
+
+**必ず依存関係に従って順番に実行してください。**
+
+1. `001_organizations.sql` - 他の全てのテーブルが依存
+2. `002_users.sql` - 組織IDに依存
+3. `003_stores.sql` - 組織IDに依存
+4. `004_item_maps.sql` - 組織IDに依存
+5. `005_jwnet_waste_codes.sql` - 独立（他と依存なし）
+6. `006_waste_type_masters.sql` - 組織ID + JWNET廃棄物コードIDに依存
+7. `007_jwnet_party_combinations.sql` - 組織IDに依存
+
+### RLS (Row Level Security)
+
+- 各スクリプトはRLSを一時的に無効化してデータを投入します
+- スクリプト実行後、自動的にRLSが再有効化されます
+
+### 重複実行の防止
+
+各スクリプトは既存データをチェックし、データが存在する場合はスキップします。
 
 ```sql
--- ✅ ON CONFLICT で重複時の動作を定義
-INSERT INTO app.organizations (id, name) 
-VALUES ('org-001'::uuid, 'Test Org')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
-
--- ❌ 単純なINSERTは重複エラーになる
-INSERT INTO app.organizations (id, name) 
-VALUES ('org-001'::uuid, 'Test Org');
+IF EXISTS (SELECT 1 FROM app.organizations LIMIT 1) THEN
+  RAISE NOTICE 'organizations already has data. Skipping seed.';
+  ...
+END IF;
 ```
 
-### 2. トランザクション必須
+### パスワードのハッシュ化
+
+`002_users.sql` では、Supabaseの `extensions.crypt()` 関数を使用してパスワードをハッシュ化しています。
 
 ```sql
-BEGIN;
-  -- 全操作をトランザクション内で実行
-  DELETE FROM app.stores WHERE id = 'test-001'::uuid;
-  INSERT INTO app.stores (...) VALUES (...);
-COMMIT;
+-- パスワード: password123
+extensions.crypt('password123', extensions.gen_salt('bf'))
 ```
 
-### 3. RLS の一時的な無効化
+## 🔐 デフォルトユーザー
 
-```sql
--- 処理前: RLS OFF
-ALTER TABLE app.stores DISABLE ROW LEVEL SECURITY;
+`002_users.sql` で作成されるデフォルトユーザー：
 
--- 処理
-INSERT INTO app.stores (...) VALUES (...);
+| メールアドレス | パスワード | ロール |
+|-------------|----------|--------|
+| admin@example.com | password123 | ADMIN |
+| user@example.com | password123 | USER |
 
--- 処理後: RLS ON（必ず戻す）
-ALTER TABLE app.stores ENABLE ROW LEVEL SECURITY;
-```
+**⚠️ 本番環境では必ずパスワードを変更してください！**
 
-### 4. 事後検証
+## 📊 データ統計
 
-```sql
--- データ整合性を検証
-DO $$
-DECLARE v_count INT;
-BEGIN
-  SELECT COUNT(*) INTO v_count FROM app.stores;
-  IF v_count < 5 THEN
-    RAISE EXCEPTION 'Validation failed: expected >= 5, got %', v_count;
-  END IF;
-END $$;
-```
-
-### 5. 外部キー順序
+各スクリプト実行後、投入されたレコード数が表示されます：
 
 ```
-親 → 子 の順で挿入
-子 → 親 の順で削除
-
-例:
-  挿入: organizations → stores → plans
-  削除: plans → stores → organizations
+✅ Seeded 1 organizations
+✅ Seeded 2 users
+✅ Seeded 3 stores
+✅ Seeded 5 item_maps
+✅ Seeded 45 jwnet_waste_codes
+✅ Seeded 11 waste_type_masters
+✅ Seeded 2 jwnet_party_combinations
 ```
 
-## テストデータ構成
+## 🛠️ トラブルシューティング
 
-### 組織（001_organizations.sql）
+### エラー: "relation does not exist"
 
-| ID | 名前 | 役割 |
-|----|------|------|
-| `org-test-001` | テスト組織A | 排出事業者 |
-| `org-test-002` | テスト組織B | 収集運搬業者 |
-| `org-test-003` | テスト組織C | 処分業者 |
+→ マイグレーションが実行されていません。先に `prisma migrate deploy` を実行してください。
 
-### ユーザー（002_users.sql）
+### エラー: "foreign key constraint violation"
 
-| User ID | Org ID | Role |
-|---------|--------|------|
-| `user-test-admin-001` | `org-test-001` | ADMIN |
-| `user-test-emitter-001` | `org-test-001` | EMITTER |
-| `user-test-transporter-001` | `org-test-002` | TRANSPORTER |
-| `user-test-disposer-001` | `org-test-003` | DISPOSER |
+→ 依存関係のあるテーブルのデータが投入されていません。実行順序を確認してください。
 
-### 店舗（003_stores.sql）
+### エラー: "permission denied"
 
-| Store Code | 名前 | エリア |
-|------------|------|--------|
-| S001 | 東京本店 | 関東 |
-| S002 | 大阪支店 | 関西 |
-| S003 | 名古屋支店 | 中部 |
-| S004 | 福岡支店 | 九州 |
-| S005 | 札幌支店 | 北海道 |
+→ RLSポリシーが有効になっています。スクリプト内でRLSを無効化する処理が含まれていることを確認してください。
 
-### 品目マッピング（004_item_maps.sql）
+## 📚 関連ドキュメント
 
-| 品目ラベル | JWNETコード | 単位 | 比重 |
-|-----------|------------|------|------|
-| 廃プラスチック類 | 0702 | T | 0.5 |
-| 金属くず | 0802 | T | 7.8 |
-| ガラスくず | 0902 | T | 2.5 |
-| 木くず | 0504 | M3 | 0.4 |
-| 紙くず | 0303 | T | 0.3 |
-
-## トラブルシューティング
-
-### 外部キー制約エラー
-
-```sql
-ERROR:  insert or update on table "stores" violates foreign key constraint
-```
-
-**原因**: 親テーブル（organizations）のデータが存在しない  
-**対策**: 001_organizations.sql を先に実行
-
-### 重複キーエラー
-
-```sql
-ERROR:  duplicate key value violates unique constraint
-```
-
-**原因**: すでに同じIDのデータが存在  
-**対策**: `ON CONFLICT` を使用するか、999_cleanup.sql で削除後に再実行
-
-### RLS制約エラー
-
-```sql
-ERROR:  new row violates row-level security policy
-```
-
-**原因**: RLSが有効なまま挿入しようとした  
-**対策**: `ALTER TABLE ... DISABLE ROW LEVEL SECURITY;` を実行
-
-## 本番環境での注意
-
-**⚠️ 本番環境ではこれらのSeedスクリプトを実行しないでください**
-
-- テスト用の固定IDを使用
-- データ整合性チェックが簡易的
-- クリーンアップスクリプトは全削除する
-
-本番環境では：
-- マイグレーションスクリプト（`db/migrations/`）を使用
-- 手動でのマスタデータ投入
-- バックアップ後の慎重な操作
-
-## 関連ドキュメント
-
-- [ARCHITECTURE_MIGRATION_ANALYSIS.md](../../docs/ARCHITECTURE_MIGRATION_ANALYSIS.md)
-- [seed-reset.md](../../docs/runbooks/seed-reset.md)
-- [db-preflight.md](../../docs/runbooks/db-preflight.md)
-
+- [Supabase SQL Editor](https://app.supabase.com/project/_/sql)
+- [Prisma Migrations](../prisma/migrations/)
+- [Database Schema](../docs/SCHEMA_CHANGE_GUIDELINES.md)
