@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     // 廃棄物種別マスターから単価を取得（collector_id と waste_type_id の紐付け）
     const wasteTypeIds = unbilledCollections
       .map((c) => c.waste_type_id)
-      .filter(Boolean);
+      .filter((id): id is string => id !== null && id !== undefined);
 
     const wasteTypeMasters = await prisma.wasteTypeMaster.findMany({
       where: {
