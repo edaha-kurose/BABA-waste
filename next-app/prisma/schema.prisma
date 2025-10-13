@@ -27,7 +27,11 @@ model Organization {
   created_by String?  @db.Uuid
   updated_by String?  @db.Uuid
   deleted_at DateTime? @db.Timestamptz(6)
-
+  
+  // JWNET 連携情報（Phase 4-B.5-1 で追加）
+  jwnet_subscriber_id         String? @db.VarChar(10) // 加入者番号（7桁）
+  jwnet_public_confirmation_id String? @db.VarChar(10) // 公開確認番号（6桁）
+  
   // Relations
   stores            Store[]
   userOrgRoles      UserOrgRole[]
@@ -35,6 +39,9 @@ model Organization {
   plans             Plan[]
   collectionRequests CollectionRequest[]
   collections       Collection[]
+  jwnetPartyCombinationsAsEmitter     JwnetPartyCombination[] @relation("EmitterOrganization")
+  jwnetPartyCombinationsAsTransporter JwnetPartyCombination[] @relation("TransporterOrganization")
+  jwnetPartyCombinationsAsDisposer    JwnetPartyCombination[] @relation("DisposerOrganization")
 
   @@map("organizations")
   @@schema("app")
@@ -80,6 +87,10 @@ model Store {
   created_by         String?   @db.Uuid
   updated_by         String?   @db.Uuid
   deleted_at         DateTime? @db.Timestamptz(6)
+  
+  // JWNET 連携情報（Phase 4-B.5-1 で追加）店舗単位での管理
+  jwnet_subscriber_id         String? @db.VarChar(10) // 加入者番号（7桁）店舗固有の場合
+  jwnet_public_confirmation_id String? @db.VarChar(10) // 公開確認番号（6桁）店舗固有の場合
 
   // Relations
   organization       Organization        @relation(fields: [org_id], references: [id], onDelete: Cascade)
@@ -207,10 +218,236 @@ model Collection {
 }
 
 // ============================================================================
+// Phase 4-B.5-1: JWNET WebEDI 対応
+// ============================================================================
+
+// JWNET 事業者組み合わせマスター（WebEDI仕様対応）
+model JwnetPartyCombination {
+  id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                         String    @db.Uuid
+  
+  // 排出事業者情報
+  emitter_org_id                 String    @db.Uuid
+  emitter_subscriber_no          String    @db.VarChar(10) // 加入者番号（7桁）
+  emitter_public_confirm_no      String    @db.VarChar(10) // 公開確認番号（6桁）
+  emitter_name                   String    @db.VarChar(255)
+  emitter_address                String    @db.VarChar(500)
+  emitter_postal_code            String    @db.VarChar(20)
+  
+  // 運搬受託者（収集業者）情報
+  transporter_org_id             String    @db.Uuid
+  transporter_subscriber_no      String    @db.VarChar(10)
+  transporter_public_confirm_no  String    @db.VarChar(10)
+  transporter_name               String    @db.VarChar(255)
+  transporter_address            String    @db.VarChar(500)
+  transporter_postal_code        String    @db.VarChar(20)
+  transporter_phone              String?   @db.VarChar(50)
+  
+  // 処分受託者情報
+  disposer_org_id                String    @db.Uuid
+  disposer_subscriber_no         String    @db.VarChar(10)
+  disposer_public_confirm_no     String    @db.VarChar(10)
+  disposer_name                  String    @db.VarChar(255)
+  disposer_address               String    @db.VarChar(500)
+  disposer_postal_code           String    @db.VarChar(20)
+  disposer_phone                 String?   @db.VarChar(50)
+  
+  // 有効期間・ステータス管理
+  is_active                      Boolean   @default(true)
+  valid_from                     DateTime  @db.Date
+  valid_to                       DateTime? @db.Date
+  notes                          String?   @db.Text
+  
+  created_at                     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by                     String?   @db.Uuid
+  updated_by                     String?   @db.Uuid
+  deleted_at                     DateTime? @db.Timestamptz(6)
+  
+  // Relations
+  emitter     Organization @relation("EmitterOrganization", fields: [emitter_org_id], references: [id], onDelete: Cascade)
+  transporter Organization @relation("TransporterOrganization", fields: [transporter_org_id], references: [id], onDelete: Cascade)
+  disposer    Organization @relation("DisposerOrganization", fields: [disposer_org_id], references: [id], onDelete: Cascade)
+  
+  @@unique([emitter_subscriber_no, emitter_public_confirm_no, transporter_subscriber_no, transporter_public_confirm_no, disposer_subscriber_no, disposer_public_confirm_no], name: "unique_party_combination")
+  @@index([org_id])
+  @@index([emitter_org_id])
+  @@index([transporter_org_id])
+  @@index([disposer_org_id])
+  @@index([is_active])
+  @@map("jwnet_party_combinations")
+  @@schema("app")
+}
+
+// JWNET 廃棄物コードマスター
+model JwnetWasteCode {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  waste_code        String    @unique @db.VarChar(10) // JWNET廃棄物コード（7桁、例: 0010101）
+  waste_name        String    @db.VarChar(255)
+  waste_category    String    @db.VarChar(100) // 廃棄物の種類（大分類）
+  waste_type        String    @db.VarChar(100) // 廃棄物の分類（小分類）
+  unit_code         String    @db.VarChar(10)  // 単位コード
+  unit_name         String    @db.VarChar(50)  // 単位名称（kg, L, m³等）
+  is_active         Boolean   @default(true)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  wasteTypeMasters WasteTypeMaster[]
+  
+  @@index([waste_code])
+  @@index([waste_category])
+  @@index([is_active])
+  @@map("jwnet_waste_codes")
+  @@schema("app")
+}
+
+// 廃棄物種別マスター（収集業者ごとの取り扱い廃棄物）
+model WasteTypeMaster {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                String    @db.Uuid
+  collector_id          String    @db.Uuid // 収集業者ID
+  waste_type_code       String    @db.VarChar(50)  // 社内廃棄物種別コード
+  waste_type_name       String    @db.VarChar(255) // 廃棄物名称
+  waste_category        String    @db.VarChar(100) // 廃棄物カテゴリー
+  waste_classification  String    @db.VarChar(100) // 廃棄物分類
+  jwnet_waste_code_id   String    @db.Uuid         // JWNET廃棄物コードマスターへの参照
+  jwnet_waste_code      String    @db.VarChar(10)  // JWNETコード（冗長だが検索最適化）
+  unit_code             String    @db.VarChar(10)  // 単位コード
+  unit_price            Float?    @db.Real         // 単価（請求用）
+  description           String?   @db.Text
+  is_active             Boolean   @default(true)
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by            String?   @db.Uuid
+  updated_by            String?   @db.Uuid
+  deleted_at            DateTime? @db.Timestamptz(6)
+  
+  // Relations
+  jwnetWasteCode JwnetWasteCode @relation(fields: [jwnet_waste_code_id], references: [id], onDelete: Restrict)
+  
+  @@unique([org_id, collector_id, waste_type_code], name: "unique_waste_type_per_collector")
+  @@index([org_id])
+  @@index([collector_id])
+  @@index([jwnet_waste_code])
+  @@index([is_active])
+  @@map("waste_type_masters")
+  @@schema("app")
+}
+
+// ============================================================================
+// Phase 4-B.5-2: 請求機能基盤
+// ============================================================================
+
+// 請求データ（Collection ベース）
+model BillingItem {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                  String    @db.Uuid
+  collector_id            String    @db.Uuid     // 収集業者ID
+  store_id                String?   @db.Uuid     // 店舗ID
+  collection_id           String?   @db.Uuid     // 回収実績ID（従量請求の場合）
+  
+  // 請求期間
+  billing_month           DateTime  @db.Date     // 請求対象月（YYYY-MM-01形式）
+  billing_period_from     DateTime  @db.Date     // 請求期間開始日
+  billing_period_to       DateTime  @db.Date     // 請求期間終了日
+  
+  // 請求種別
+  billing_type            String    @db.VarChar(50) // FIXED, METERED, OTHER
+  
+  // 品目情報
+  item_name               String    @db.VarChar(255) // 品目名（固定費用名、廃棄物名等）
+  item_code               String?   @db.VarChar(50)  // 品目コード
+  waste_type_id           String?   @db.Uuid         // 廃棄物種別マスターID
+  
+  // 金額計算
+  unit_price              Float?    @db.Real         // 単価
+  quantity                Float?    @db.Real         // 数量
+  unit                    String?   @db.VarChar(10)  // 単位
+  amount                  Float     @db.Real         // 請求金額（計算結果）
+  tax_rate                Float     @default(0.10) @db.Real // 消費税率
+  tax_amount              Float     @db.Real         // 消費税額
+  total_amount            Float     @db.Real         // 合計金額（税込）
+  
+  // JWNET連携（オプション）
+  jwnet_registration_id   String?   @db.VarChar(255) // JWNET登録ID（参考）
+  jwnet_manifest_no       String?   @db.VarChar(50)  // マニフェスト番号（参考）
+  
+  // ステータス管理
+  status                  String    @default("DRAFT") @db.VarChar(50) // DRAFT, SUBMITTED, APPROVED, PAID, CANCELLED
+  submitted_at            DateTime? @db.Timestamptz(6) // 提出日時
+  approved_at             DateTime? @db.Timestamptz(6) // 承認日時
+  approved_by             String?   @db.Uuid           // 承認者
+  paid_at                 DateTime? @db.Timestamptz(6) // 入金日時
+  
+  // 備考
+  notes                   String?   @db.Text
+  
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by              String?   @db.Uuid
+  updated_by              String?   @db.Uuid
+  deleted_at              DateTime? @db.Timestamptz(6)
+  
+  @@index([org_id])
+  @@index([collector_id])
+  @@index([store_id])
+  @@index([collection_id])
+  @@index([billing_month])
+  @@index([billing_type])
+  @@index([status])
+  @@index([submitted_at])
+  @@map("billing_items")
+  @@schema("app")
+}
+
+// 請求サマリー（月次集計）
+model BillingSummary {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                String    @db.Uuid
+  collector_id          String    @db.Uuid     // 収集業者ID
+  billing_month         DateTime  @db.Date     // 請求対象月
+  
+  // 集計金額
+  total_fixed_amount    Float     @default(0) @db.Real // 固定金額合計
+  total_metered_amount  Float     @default(0) @db.Real // 従量請求合計
+  total_other_amount    Float     @default(0) @db.Real // その他費用合計
+  subtotal_amount       Float     @default(0) @db.Real // 小計（税抜）
+  tax_amount            Float     @default(0) @db.Real // 消費税額
+  total_amount          Float     @default(0) @db.Real // 合計金額（税込）
+  
+  // 件数
+  total_items_count     Int       @default(0)          // 明細件数
+  fixed_items_count     Int       @default(0)          // 固定費用件数
+  metered_items_count   Int       @default(0)          // 従量請求件数
+  other_items_count     Int       @default(0)          // その他費用件数
+  
+  // ステータス
+  status                String    @default("DRAFT") @db.VarChar(50) // DRAFT, SUBMITTED, APPROVED, PAID
+  submitted_at          DateTime? @db.Timestamptz(6)
+  approved_at           DateTime? @db.Timestamptz(6)
+  approved_by           String?   @db.Uuid
+  paid_at               DateTime? @db.Timestamptz(6)
+  
+  notes                 String?   @db.Text
+  
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by            String?   @db.Uuid
+  updated_by            String?   @db.Uuid
+  
+  @@unique([org_id, collector_id, billing_month], name: "unique_billing_summary")
+  @@index([org_id])
+  @@index([collector_id])
+  @@index([billing_month])
+  @@index([status])
+  @@map("billing_summaries")
+  @@schema("app")
+}
+
+// ============================================================================
 // NOTE: 以下のテーブルは段階的に追加予定
 // - ImportHistory
-// - JwnetWasteCode
-// - WasteTypeMaster
 // - StoreCollectorAssignment
 // - Collector (User統合検討)
 // - DisposalSite
