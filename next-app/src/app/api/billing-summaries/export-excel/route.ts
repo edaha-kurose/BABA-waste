@@ -1,7 +1,7 @@
 /**
- * 請求書 Excel 出力 API（修正版）
+ * 請求書 Excel 出力 API
  * 
- * POST /api/billing-summaries/export-excel-v2
+ * POST /api/billing-summaries/export-excel
  * 
  * BABA請求書フォーマットに準拠した Excel 出力
  * ✅ 廃棄物マスターの billing_category に基づいて分類
@@ -35,7 +35,7 @@ interface StoreBillingData {
   cardboard_buyback: number;       // M列: 段ボール（有価買取分 - マイナス値）
 }
 
-// POST /api/billing-summaries/export-excel-v2 - Excel出力（修正版）
+// POST /api/billing-summaries/export-excel - Excel出力
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -286,7 +286,7 @@ export async function POST(request: NextRequest) {
     const buffer = await workbook.xlsx.writeBuffer();
 
     // ファイル名生成
-    const fileName = `請求書_${monthStr}_v2.xlsx`;
+    const fileName = `請求書_${monthStr}.xlsx`;
 
     // レスポンスヘッダー設定
     const headers = new Headers();
@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
       headers,
     });
   } catch (error) {
-    console.error('[Billing Export Excel V2] POST error:', error);
+    console.error('[Billing Export Excel] POST error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
