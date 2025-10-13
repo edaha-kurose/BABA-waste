@@ -1,26 +1,18 @@
 /**
- * Supabase 認証ヘルパー関数（統合エクスポート）
+ * Supabase 認証ヘルパー関数（型定義エクスポート）
  * 
- * ⚠️ 重要: このファイルは互換性のために残されています
- * 新しいコードでは以下を直接インポートしてください：
- * - クライアントサイド: '@/lib/auth/supabase-browser'
- * - サーバーサイド: '@/lib/auth/supabase-server'
+ * ⚠️ 重要: 実装は分離されています
+ * 
+ * ### クライアントサイドで使用する場合（'use client' コンポーネント）:
+ * ```typescript
+ * import { createBrowserClient } from '@/lib/auth/supabase-browser'
+ * ```
+ * 
+ * ### サーバーサイドで使用する場合（Server Components, API Routes, Server Actions）:
+ * ```typescript
+ * import { createServerClient, getCurrentUser } from '@/lib/auth/supabase-server'
+ * ```
  */
 
-// クライアントサイド用（'use client' コンポーネントで使用）
-export { createBrowserClient } from './supabase-browser'
-
-// サーバーサイド用（Server Components, API Routes, Server Actions で使用）
-export {
-  createServerClient,
-  createServiceRoleClient,
-  getCurrentUser,
-  getCurrentSession,
-  getUserRole,
-  getUserOrganizations,
-  hasPermission,
-  signOut,
-  signInWithEmail,
-  signUpWithEmail,
-} from './supabase-server'
-
+// 型定義のみエクスポート（実装はインポートしない）
+export type { User, Session } from '@supabase/supabase-js'

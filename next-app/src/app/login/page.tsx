@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, Form, Input, Button, message, Typography, Space } from 'antd'
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
-import { createBrowserClient } from '@/lib/auth/supabase'
+import { createBrowserClient } from '@/lib/auth/supabase-browser'
 
 const { Title, Text, Link } = Typography
 
