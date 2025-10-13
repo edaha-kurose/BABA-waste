@@ -236,8 +236,8 @@ export default function LoginPage() {
           </div>
         </Form>
 
-        {/* テスト用クイックログイン */}
-        {(process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ENABLE_QUICK_LOGIN === 'true') && !isSignUp && (
+        {/* テスト用クイックログイン - 常に表示（テスト環境用） */}
+        {!isSignUp && (
           <Card
             size="small"
             style={{ marginTop: 16, backgroundColor: '#fff9e6', borderColor: '#ffd666' }}
