@@ -48,17 +48,25 @@ model Organization {
 }
 
 model UserOrgRole {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String   @db.Uuid
-  org_id     String   @db.Uuid
-  role       String   @db.VarChar(50)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  org_id     String    @db.Uuid
+  role       String    @db.VarChar(50)
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by String?   @db.Uuid
+  updated_by String?   @db.Uuid
+  deleted_at DateTime? @db.Timestamptz(6)
 
   // Relations
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, org_id, role])
+  @@index([user_id])
+  @@index([org_id])
+  @@index([is_active])
   @@map("user_org_roles")
   @@schema("app")
 }
@@ -330,6 +338,7 @@ model WasteTypeMaster {
   
   // Relations
   jwnetWasteCode JwnetWasteCode @relation(fields: [jwnet_waste_code_id], references: [id], onDelete: Restrict)
+  billingItems   BillingItem[]
   
   @@unique([org_id, collector_id, waste_type_code], name: "unique_waste_type_per_collector")
   @@index([org_id])
@@ -395,6 +404,9 @@ model BillingItem {
   updated_by              String?   @db.Uuid
   deleted_at              DateTime? @db.Timestamptz(6)
   
+  // Relations
+  wasteTypeMaster         WasteTypeMaster? @relation(fields: [waste_type_id], references: [id], onDelete: SetNull)
+  
   @@index([org_id])
   @@index([collector_id])
   @@index([store_id])
@@ -452,12 +464,97 @@ model BillingSummary {
 }
 
 // ============================================================================
+// Phase 4-A: 認証・認可
+// ============================================================================
+
+// ユーザーモデル（アプリケーション側のユーザー情報）
+// auth.usersとは別に、アプリケーション固有のユーザー情報を管理
+model User {
+  id                             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auth_user_id                   String?        @unique @db.Uuid  // auth.usersへの参照
+  email                          String         @unique @db.VarChar(255)
+  name                           String?        @db.VarChar(255)
+  is_active                      Boolean        @default(true)
+  created_at                     DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by                     String?        @db.Uuid
+  updated_by                     String?        @db.Uuid
+  deleted_at                     DateTime?      @db.Timestamptz(6)
+  
+  // Relations
+  userOrgRoles                   UserOrgRole[]
+  
+  @@index([email])
+  @@index([is_active])
+  @@map("users")
+  @@schema("app")
+}
+
+// ============================================================================
+// Phase 4-B: JWNET統合
+// ============================================================================
+
+// JWNET予約番号管理
+model JwnetReservation {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id            String    @db.Uuid
+  reservation_no    String    @db.VarChar(50)  // 予約番号
+  status            String    @default("RESERVED") @db.VarChar(50) // RESERVED, USED, EXPIRED, CANCELLED
+  request_data      Json?     // 予約リクエストデータ
+  response_data     Json?     // JWNET APIレスポンス
+  used_at           DateTime? @db.Timestamptz(6)
+  expires_at        DateTime? @db.Timestamptz(6)
+  notes             String?   @db.Text
+  
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by        String?   @db.Uuid
+  updated_by        String?   @db.Uuid
+  deleted_at        DateTime? @db.Timestamptz(6)
+  
+  @@unique([org_id, reservation_no])
+  @@index([org_id])
+  @@index([status])
+  @@index([reservation_no])
+  @@map("jwnet_reservations")
+  @@schema("app")
+}
+
+// JWNETマニフェスト登録管理
+model JwnetRegistration {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id            String    @db.Uuid
+  collection_id     String?   @db.Uuid // 回収実績ID（任意）
+  manifest_no       String    @db.VarChar(50)  // マニフェスト番号
+  receipt_no        String?   @db.VarChar(50)  // 受付番号
+  status            String    @default("DRAFT") @db.VarChar(50) // DRAFT, REGISTERED, SUBMITTED, COMPLETED, ERROR
+  manifest_data     Json?     // マニフェストデータ
+  response_data     Json?     // JWNET APIレスポンス
+  submitted_at      DateTime? @db.Timestamptz(6)
+  completed_at      DateTime? @db.Timestamptz(6)
+  error_message     String?   @db.Text
+  notes             String?   @db.Text
+  
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by        String?   @db.Uuid
+  updated_by        String?   @db.Uuid
+  deleted_at        DateTime? @db.Timestamptz(6)
+  
+  @@unique([org_id, manifest_no])
+  @@index([org_id])
+  @@index([collection_id])
+  @@index([status])
+  @@index([manifest_no])
+  @@map("jwnet_registrations")
+  @@schema("app")
+}
+
+// ============================================================================
 // NOTE: 以下のテーブルは段階的に追加予定
 // - ImportHistory
 // - StoreCollectorAssignment
 // - Collector (User統合検討)
 // - DisposalSite
-// - JwnetReservation
-// - JwnetRegistration
 // ============================================================================
 

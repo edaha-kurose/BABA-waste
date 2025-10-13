@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  // output: 'standalone' はVercelで自動設定されるため不要
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

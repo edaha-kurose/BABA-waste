@@ -557,7 +557,7 @@ export default function BillingPage() {
               max={1}
               step={0.01}
               formatter={(value) => `${(Number(value) * 100).toFixed(0)}%`}
-              parser={(value) => Number(value?.replace('%', '')) / 100}
+              parser={(value) => (Number(value?.replace('%', '')) / 100) as number & (0 | 1)}
             />
           </Form.Item>
         </Form>

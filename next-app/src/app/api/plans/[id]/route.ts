@@ -27,16 +27,6 @@ export async function GET(
             phone: true,
           },
         },
-        itemMap: {
-          select: {
-            id: true,
-            item_label: true,
-            jwnet_code: true,
-            hazard: true,
-            default_unit: true,
-            disposal_method_code: true,
-          },
-        },
         collectionRequests: {
           where: { deleted_at: null },
           orderBy: { request_date: 'desc' },

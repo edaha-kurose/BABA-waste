@@ -11,8 +11,7 @@ export async function GET(
     const user = await prisma.user.findUnique({
       where: { id: params.id },
       include: {
-        user_org_roles: {
-          where: { deleted_at: null },
+        userOrgRoles: {
           include: {
             organization: {
               select: {
@@ -26,7 +25,7 @@ export async function GET(
       },
     })
 
-    if (!user || user.deleted_at) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Not Found', message: 'User not found' },
         { status: 404 }
@@ -131,7 +130,7 @@ export async function PATCH(
       return await tx.user.findUnique({
         where: { id: params.id },
         include: {
-          user_org_roles: {
+          userOrgRoles: {
             where: { deleted_at: null },
             include: {
               organization: {

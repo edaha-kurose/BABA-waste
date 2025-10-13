@@ -61,15 +61,6 @@ export async function GET(request: NextRequest) {
             address: true,
           },
         },
-        itemMap: {
-          select: {
-            id: true,
-            item_label: true,
-            jwnet_code: true,
-            hazard: true,
-            default_unit: true,
-          },
-        },
         _count: {
           select: {
             collectionRequests: true,

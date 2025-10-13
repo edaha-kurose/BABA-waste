@@ -79,7 +79,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 店舗情報を取得
-    const storeIds = [...new Set(billingItems.map((item) => item.store_id).filter(Boolean))];
+    const storeIds = Array.from(
+      new Set(
+        billingItems
+          .map((item) => item.store_id)
+          .filter((id): id is string => id !== null && id !== undefined)
+      )
+    );
     const stores = await prisma.store.findMany({
       where: {
         id: {

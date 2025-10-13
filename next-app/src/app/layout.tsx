@@ -5,6 +5,9 @@ import { AntdRegistry } from '@ant-design/nextjs-registry'
 
 const inter = Inter({ subsets: ['latin'] })
 
+// すべてのページを動的レンダリングに設定
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: '廃棄物管理システム - BABA Waste',
   description: 'JWNET連携廃棄物管理システム',

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const where: any = {}
     
     if (orgId) {
-      where.user_org_roles = {
+      where.userOrgRoles = {
         some: {
           org_id: orgId,
           deleted_at: null,
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
     
     if (role) {
-      where.user_org_roles = {
+      where.userOrgRoles = {
         some: {
           role: role,
           deleted_at: null,
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       where,
       orderBy: { created_at: 'desc' },
       include: {
-        user_org_roles: {
+        userOrgRoles: {
           where: { deleted_at: null },
           include: {
             organization: {
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
 
       return {
         ...user,
-        user_org_roles: [userOrgRole],
+        userOrgRoles: [userOrgRole],
       }
     })
 
