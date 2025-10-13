@@ -48,6 +48,18 @@ NODE_ENV="development"
 
 
 # ============================================
+# 🚛 JWNET API（産業廃棄物情報ネットワーク）
+# ============================================
+# 📍 取得場所: JWNET管理画面 > API設定
+# ⚠️ Phase 4-B で実装完了。実際の値を設定してください。
+#
+JWNET_API_URL="https://api.jwnet.or.jp"
+JWNET_API_KEY="[YOUR-JWNET-API-KEY]"
+JWNET_SUBSCRIBER_NO="[YOUR-7-DIGIT-SUBSCRIBER-NO]"
+JWNET_PUBLIC_CONFIRM_NO="[YOUR-6-DIGIT-PUBLIC-CONFIRM-NO]"
+
+
+# ============================================
 # 📖 記入例（参考用）
 # ============================================
 # DATABASE_URL="postgresql://postgres:MySecretPassword123@db.abcdefghijk.supabase.co:5432/postgres?pgbouncer=true&connection_limit=1"
