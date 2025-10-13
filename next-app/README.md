@@ -1,6 +1,6 @@
 # BABA Waste Management System - Next.js App
 
-Phase 2で構築されたNext.js 14 + Prisma + Supabaseの新しいアーキテクチャ。
+Phase 2-3で構築されたNext.js 14 + Prisma + Supabaseの新しいアーキテクチャ。
 
 ## 🚀 Getting Started
 
@@ -17,17 +17,19 @@ cd next-app
 pnpm install
 ```
 
-2. 環境変数の設定
+2. **環境変数の設定（重要）**
 ```bash
-cp .env.example .env
-# .envファイルを編集してデータベース接続情報を設定
+cp .env.local.example .env.local
+# .env.localファイルを編集してデータベース接続情報を設定
 ```
+
+**必須環境変数**:
+- `DATABASE_URL`: Supabase接続文字列
+- `NEXT_PUBLIC_SUPABASE_URL`: SupabaseプロジェクトURL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase Anon Key
 
 3. Prismaのセットアップ
 ```bash
-# 既存DBからスキーマを取得（初回のみ）
-pnpm prisma:pull
-
 # Prismaクライアント生成
 pnpm prisma:generate
 
@@ -42,6 +44,15 @@ pnpm dev
 
 ブラウザで http://localhost:3000 を開く
 
+## ⚠️ 重要: 初回セットアップ
+
+**データベース接続エラーが出る場合**:
+```
+Environment variable not found: DATABASE_URL
+```
+
+→ `.env.local`ファイルに`DATABASE_URL`を設定してください。
+
 ## 📁 プロジェクト構造
 
 ```
@@ -50,10 +61,13 @@ next-app/
 │   ├── app/                    # App Router
 │   │   ├── api/               # BFF API Routes
 │   │   │   ├── health/        # ヘルスチェック
+│   │   │   ├── test/          # Prisma接続テスト
 │   │   │   ├── organizations/ # 組織管理API
 │   │   │   ├── stores/        # 店舗管理API
 │   │   │   ├── plans/         # 収集予定API
-│   │   │   └── collections/   # 収集実績API
+│   │   │   ├── collections/   # 収集実績API
+│   │   │   ├── collection-requests/ # 収集依頼API
+│   │   │   └── item-maps/     # 品目マッピングAPI
 │   │   ├── dashboard/         # ダッシュボード
 │   │   │   ├── organizations/ # 組織管理画面
 │   │   │   └── layout.tsx     # ダッシュボードレイアウト
@@ -67,6 +81,9 @@ next-app/
 │       └── auth.ts            # 認証ヘルパー
 ├── prisma/
 │   └── schema.prisma          # Prismaスキーマ
+├── tests/
+│   ├── api/                   # API統合テスト
+│   └── e2e/                   # E2Eテスト
 ├── middleware.ts              # Next.js Middleware（認証）
 └── package.json
 ```
@@ -77,6 +94,10 @@ next-app/
 - `pnpm build` - プロダクションビルド
 - `pnpm start` - プロダクションサーバー起動
 - `pnpm lint` - ESLint実行
+- `pnpm test` - Vitestテスト実行
+- `pnpm test:api` - APIテスト実行
+- `pnpm test:e2e` - E2Eテスト実行
+- `pnpm test:e2e:ui` - E2EテストUI起動
 - `pnpm prisma:generate` - Prismaクライアント生成
 - `pnpm prisma:studio` - Prisma Studio起動
 - `pnpm prisma:pull` - DBからスキーマ取得
@@ -93,32 +114,20 @@ next-app/
 - **Styling**: Tailwind CSS + Ant Design
 - **Validation**: Zod
 - **Auth**: Supabase Auth
+- **Testing**: Vitest + Playwright
 
 ### BFF (Backend for Frontend)
 Next.js API Routesを使用してBFFレイヤーを実装。
 
-#### 実装済みAPI
+#### 実装済みAPI（Phase 3）
 - `GET /api/health` - ヘルスチェック
-- `GET /api/organizations` - 組織一覧取得
-- `POST /api/organizations` - 組織作成
-- `GET /api/organizations/[id]` - 組織詳細取得
-- `PATCH /api/organizations/[id]` - 組織更新
-- `DELETE /api/organizations/[id]` - 組織削除
-- `GET /api/stores` - 店舗一覧取得（検索・フィルタ対応）
-- `POST /api/stores` - 店舗作成
-- `GET /api/stores/[id]` - 店舗詳細取得
-- `PATCH /api/stores/[id]` - 店舗更新
-- `DELETE /api/stores/[id]` - 店舗削除
-- `GET /api/plans` - 収集予定一覧取得
-- `POST /api/plans` - 収集予定作成
-- `GET /api/plans/[id]` - 収集予定詳細取得
-- `PATCH /api/plans/[id]` - 収集予定更新
-- `DELETE /api/plans/[id]` - 収集予定削除
-- `GET /api/collections` - 収集実績一覧取得
-- `POST /api/collections` - 収集実績作成
-- `GET /api/collections/[id]` - 収集実績詳細取得
-- `PATCH /api/collections/[id]` - 収集実績更新
-- `DELETE /api/collections/[id]` - 収集実績削除
+- `GET /api/test` - Prisma接続テスト
+- **Organizations API** (CRUD完備)
+- **Stores API** (CRUD + 検索・フィルタ)
+- **Plans API** (CRUD + ステータス管理)
+- **Collections API** (CRUD + 実績登録)
+- **Collection Requests API** (CRUD) ← NEW!
+- **Item Maps API** (CRUD + 検索) ← NEW!
 
 ### Data Flow
 ```
@@ -132,7 +141,7 @@ UI (React) → API Routes → Prisma → Supabase PostgreSQL
 
 - 開発環境では認証をバイパス
 - `/api/*`と`/dashboard/*`は認証必須
-- `/api/health`は認証不要
+- `/api/health`と`/api/test`は認証不要
 
 ### 認証フロー
 1. ユーザーがログインページでメール/パスワードを入力
@@ -156,36 +165,56 @@ UI (React) → API Routes → Prisma → Supabase PostgreSQL
 
 ### API テスト
 ```bash
+# 全テスト実行
+pnpm test
+
+# APIテストのみ
+pnpm test:api
+
+# E2Eテスト
+pnpm test:e2e
+
+# E2EテストUI
+pnpm test:e2e:ui
+```
+
+### 手動APIテスト
+```bash
 # Health Check
 curl http://localhost:3000/api/health
+
+# Prisma接続テスト
+curl http://localhost:3000/api/test
 
 # Organizations API
 curl http://localhost:3000/api/organizations
 
-# Stores API
-curl "http://localhost:3000/api/stores?org_id=xxx"
+# Collection Requests API
+curl http://localhost:3000/api/collection-requests
 
-# Plans API
-curl "http://localhost:3000/api/plans?org_id=xxx&from_date=2024-01-01"
-
-# Collections API
-curl "http://localhost:3000/api/collections?org_id=xxx"
+# Item Maps API
+curl http://localhost:3000/api/item-maps
 ```
 
 ## 📚 ドキュメント
 
 - [Phase 2 移行計画](../docs/PHASE2_MIGRATION_PLAN.md)
+- [Phase 2 完了レポート](../docs/PHASE2_COMPLETION_REPORT.md)
+- [デプロイガイド](./docs/DEPLOYMENT.md)
 - [技術的負債ステータス](../docs/TECHNICAL_DEBT_STATUS.md)
 - [アーキテクチャ分析](../docs/ARCHITECTURE_MIGRATION_ANALYSIS.md)
 
-## 🎯 Phase 2-2 実装完了
+## 🎯 Phase 3 実装中
 
 ### ✅ 完了した機能
-1. **Stores API** - 店舗管理（CRUD + 検索・フィルタ）
-2. **Plans API** - 収集予定管理（CRUD + ステータス管理）
-3. **Collections API** - 収集実績管理（CRUD + 実績登録）
-4. **ダッシュボードUI** - 統計表示、組織一覧画面
-5. **認証システム** - Middleware、ログインページ、認証ヘルパー
+1. **Collection Requests API** - 収集依頼管理（CRUD）
+2. **Item Maps API** - 品目マッピング管理（CRUD + 検索）
+3. **環境変数テンプレート** - `.env.local.example`
+
+### 🔄 進行中の機能
+- User Management API
+- 店舗管理画面UI
+- 収集予定管理画面UI
 
 ### 📈 進捗状況
 - ✅ Next.js 14 + Prisma セットアップ
@@ -193,10 +222,13 @@ curl "http://localhost:3000/api/collections?org_id=xxx"
 - ✅ Stores API 完成
 - ✅ Plans API 完成
 - ✅ Collections API 完成
+- ✅ Collection Requests API 完成 ← NEW!
+- ✅ Item Maps API 完成 ← NEW!
 - ✅ ダッシュボードUI 基盤構築
 - ✅ 認証・認可統合
-- ⏳ E2Eテスト
-- ⏳ 既存Viteアプリからの段階的移行
+- ✅ テスト基盤（Vitest + Playwright）
+- ⏳ User Management API
+- ⏳ UI拡充
 
 ## 🔗 関連リンク
 
@@ -204,7 +236,10 @@ curl "http://localhost:3000/api/collections?org_id=xxx"
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Supabase Documentation](https://supabase.com/docs)
 - [Ant Design Documentation](https://ant.design/components/overview/)
+- [Vitest Documentation](https://vitest.dev/)
+- [Playwright Documentation](https://playwright.dev/)
 
 ---
 
-**Status**: Phase 2-2 完了 ✅
+**Status**: Phase 3 進行中 🚀  
+**Last Updated**: 2025-10-13
