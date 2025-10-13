@@ -1,245 +1,427 @@
-# BABA Waste Management System - Next.js App
+# BABA Waste Management System 🗑️
 
-Phase 2-3で構築されたNext.js 14 + Prisma + Supabaseの新しいアーキテクチャ。
+**バージョン**: 1.0.0  
+**最終更新日**: 2025-10-13
 
-## 🚀 Getting Started
+廃棄物管理を効率化する統合管理システム
 
-### 前提条件
-- Node.js 18+
-- pnpm 8+
-- PostgreSQL 14+ (Supabase)
+---
 
-### セットアップ
+## 📋 概要
 
-1. 依存関係のインストール
-```bash
-cd next-app
-pnpm install
-```
+BABA Waste Management System は、産業廃棄物・一般廃棄物の収集・運搬・処分を一元管理するためのWebアプリケーションです。
 
-2. **環境変数の設定（重要）**
-```bash
-cp .env.local.example .env.local
-# .env.localファイルを編集してデータベース接続情報を設定
-```
+### 主要機能
 
-**必須環境変数**:
-- `DATABASE_URL`: Supabase接続文字列
-- `NEXT_PUBLIC_SUPABASE_URL`: SupabaseプロジェクトURL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase Anon Key
+- ✅ **認証・認可**: Supabase Auth + RBAC（6ロール、32権限）
+- ✅ **ダッシュボード**: KPIカード、月次推移グラフ、店舗別比較、廃棄物種別内訳
+- ✅ **組織・店舗管理**: 組織・店舗の CRUD 操作
+- ✅ **収集予定・実績管理**: 収集予定・依頼・実績の管理
+- ✅ **請求管理**: 回収実績ベースの請求データ自動生成、Excel 出力
+- ✅ **廃棄物マスター管理**: JWNET 廃棄物コードマスター、廃棄物種別マスター
+- ✅ **JWNET 連携**: マニフェスト登録、予約作成、マニフェスト照会、事業者組み合わせマスター
+- ✅ **データ可視化**: Recharts による美しいグラフ表示
 
-3. Prismaのセットアップ
-```bash
-# Prismaクライアント生成
-pnpm prisma:generate
-
-# Prisma Studioでデータ確認
-pnpm prisma:studio
-```
-
-4. 開発サーバー起動
-```bash
-pnpm dev
-```
-
-ブラウザで http://localhost:3000 を開く
-
-## ⚠️ 重要: 初回セットアップ
-
-**データベース接続エラーが出る場合**:
-```
-Environment variable not found: DATABASE_URL
-```
-
-→ `.env.local`ファイルに`DATABASE_URL`を設定してください。
-
-## 📁 プロジェクト構造
-
-```
-next-app/
-├── src/
-│   ├── app/                    # App Router
-│   │   ├── api/               # BFF API Routes
-│   │   │   ├── health/        # ヘルスチェック
-│   │   │   ├── test/          # Prisma接続テスト
-│   │   │   ├── organizations/ # 組織管理API
-│   │   │   ├── stores/        # 店舗管理API
-│   │   │   ├── plans/         # 収集予定API
-│   │   │   ├── collections/   # 収集実績API
-│   │   │   ├── collection-requests/ # 収集依頼API
-│   │   │   └── item-maps/     # 品目マッピングAPI
-│   │   ├── dashboard/         # ダッシュボード
-│   │   │   ├── organizations/ # 組織管理画面
-│   │   │   └── layout.tsx     # ダッシュボードレイアウト
-│   │   ├── login/             # ログインページ
-│   │   ├── layout.tsx         # ルートレイアウト
-│   │   ├── page.tsx           # トップページ
-│   │   └── globals.css        # グローバルスタイル
-│   ├── components/             # Reactコンポーネント
-│   └── lib/                   # ユーティリティ
-│       ├── prisma.ts          # Prismaクライアント
-│       └── auth.ts            # 認証ヘルパー
-├── prisma/
-│   └── schema.prisma          # Prismaスキーマ
-├── tests/
-│   ├── api/                   # API統合テスト
-│   └── e2e/                   # E2Eテスト
-├── middleware.ts              # Next.js Middleware（認証）
-└── package.json
-```
-
-## 🛠️ 利用可能なスクリプト
-
-- `pnpm dev` - 開発サーバー起動 (http://localhost:3000)
-- `pnpm build` - プロダクションビルド
-- `pnpm start` - プロダクションサーバー起動
-- `pnpm lint` - ESLint実行
-- `pnpm test` - Vitestテスト実行
-- `pnpm test:api` - APIテスト実行
-- `pnpm test:e2e` - E2Eテスト実行
-- `pnpm test:e2e:ui` - E2EテストUI起動
-- `pnpm prisma:generate` - Prismaクライアント生成
-- `pnpm prisma:studio` - Prisma Studio起動
-- `pnpm prisma:pull` - DBからスキーマ取得
-- `pnpm prisma:push` - スキーマをDBに反映
-- `pnpm prisma:migrate` - マイグレーション作成・実行
+---
 
 ## 🏗️ アーキテクチャ
 
 ### Tech Stack
-- **Framework**: Next.js 14+ (App Router)
-- **Language**: TypeScript 5+
+
+- **Frontend/BFF**: Next.js 14+ (App Router)
+- **Database**: Supabase (PostgreSQL)
 - **ORM**: Prisma 5+
-- **Database**: Supabase PostgreSQL
-- **Styling**: Tailwind CSS + Ant Design
-- **Validation**: Zod
+- **UI Library**: Ant Design + Tailwind CSS
+- **Charts**: Recharts
+- **Excel**: ExcelJS
 - **Auth**: Supabase Auth
-- **Testing**: Vitest + Playwright
+- **Deployment**: Vercel
+- **CI/CD**: GitHub Actions
 
-### BFF (Backend for Frontend)
-Next.js API Routesを使用してBFFレイヤーを実装。
+### ディレクトリ構造
 
-#### 実装済みAPI（Phase 3）
-- `GET /api/health` - ヘルスチェック
-- `GET /api/test` - Prisma接続テスト
-- **Organizations API** (CRUD完備)
-- **Stores API** (CRUD + 検索・フィルタ)
-- **Plans API** (CRUD + ステータス管理)
-- **Collections API** (CRUD + 実績登録)
-- **Collection Requests API** (CRUD) ← NEW!
-- **Item Maps API** (CRUD + 検索) ← NEW!
-
-### Data Flow
 ```
-UI (React) → API Routes → Prisma → Supabase PostgreSQL
+next-app/
+├── prisma/
+│   ├── schema.prisma          # Prisma スキーマ定義
+│   └── migrations/            # マイグレーションファイル
+├── src/
+│   ├── app/                   # Next.js App Router
+│   │   ├── api/              # API Routes
+│   │   ├── dashboard/        # ダッシュボード UI
+│   │   └── login/            # ログイン UI
+│   ├── components/           # 共通コンポーネント
+│   ├── lib/                  # ライブラリ・ユーティリティ
+│   └── types/                # 型定義
+├── tests/                    # テストコード
+│   ├── api/                  # API Integration Tests
+│   └── e2e/                  # E2E Tests (Playwright)
+├── docs/                     # ドキュメント
+├── vercel.json               # Vercel 設定
+└── package.json              # 依存関係
+
 ```
-
-## 🔐 認証
-
-### Middleware
-`middleware.ts`で認証を管理。
-
-- 開発環境では認証をバイパス
-- `/api/*`と`/dashboard/*`は認証必須
-- `/api/health`と`/api/test`は認証不要
-
-### 認証フロー
-1. ユーザーがログインページでメール/パスワードを入力
-2. Supabase Authで認証
-3. JWTトークンをCookieに保存
-4. Middlewareでトークン検証
-5. 認証済みユーザーのみアクセス許可
-
-## 📊 データベーススキーマ
-
-### 実装済みテーブル
-- `organizations` - 組織
-- `user_org_roles` - ユーザー組織ロール
-- `stores` - 店舗
-- `item_maps` - 品目マッピング
-- `plans` - 収集予定
-- `collection_requests` - 収集依頼
-- `collections` - 収集実績
-
-## 🧪 テスト
-
-### API テスト
-```bash
-# 全テスト実行
-pnpm test
-
-# APIテストのみ
-pnpm test:api
-
-# E2Eテスト
-pnpm test:e2e
-
-# E2EテストUI
-pnpm test:e2e:ui
-```
-
-### 手動APIテスト
-```bash
-# Health Check
-curl http://localhost:3000/api/health
-
-# Prisma接続テスト
-curl http://localhost:3000/api/test
-
-# Organizations API
-curl http://localhost:3000/api/organizations
-
-# Collection Requests API
-curl http://localhost:3000/api/collection-requests
-
-# Item Maps API
-curl http://localhost:3000/api/item-maps
-```
-
-## 📚 ドキュメント
-
-- [Phase 2 移行計画](../docs/PHASE2_MIGRATION_PLAN.md)
-- [Phase 2 完了レポート](../docs/PHASE2_COMPLETION_REPORT.md)
-- [デプロイガイド](./docs/DEPLOYMENT.md)
-- [技術的負債ステータス](../docs/TECHNICAL_DEBT_STATUS.md)
-- [アーキテクチャ分析](../docs/ARCHITECTURE_MIGRATION_ANALYSIS.md)
-
-## 🎯 Phase 3 実装中
-
-### ✅ 完了した機能
-1. **Collection Requests API** - 収集依頼管理（CRUD）
-2. **Item Maps API** - 品目マッピング管理（CRUD + 検索）
-3. **環境変数テンプレート** - `.env.local.example`
-
-### 🔄 進行中の機能
-- User Management API
-- 店舗管理画面UI
-- 収集予定管理画面UI
-
-### 📈 進捗状況
-- ✅ Next.js 14 + Prisma セットアップ
-- ✅ Organizations API 完成
-- ✅ Stores API 完成
-- ✅ Plans API 完成
-- ✅ Collections API 完成
-- ✅ Collection Requests API 完成 ← NEW!
-- ✅ Item Maps API 完成 ← NEW!
-- ✅ ダッシュボードUI 基盤構築
-- ✅ 認証・認可統合
-- ✅ テスト基盤（Vitest + Playwright）
-- ⏳ User Management API
-- ⏳ UI拡充
-
-## 🔗 関連リンク
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Ant Design Documentation](https://ant.design/components/overview/)
-- [Vitest Documentation](https://vitest.dev/)
-- [Playwright Documentation](https://playwright.dev/)
 
 ---
 
-**Status**: Phase 3 進行中 🚀  
-**Last Updated**: 2025-10-13
+## 🚀 クイックスタート
+
+### 前提条件
+
+- Node.js 18+
+- pnpm 8+
+- Supabase アカウント
+- Git
+
+### 1. リポジトリのクローン
+
+```bash
+git clone https://github.com/YOUR_USERNAME/BABA-waste.git
+cd BABA-waste/next-app
+```
+
+### 2. 依存関係のインストール
+
+```bash
+pnpm install
+```
+
+### 3. 環境変数の設定
+
+`.env.local` ファイルを作成し、以下の環境変数を設定：
+
+```env
+# Database
+DATABASE_URL=postgresql://...
+DIRECT_URL=postgresql://...
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Application
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
+
+# JWNET API (Optional)
+JWNET_API_URL=https://api.jwnet.or.jp
+JWNET_API_KEY=your-api-key
+JWNET_SUBSCRIBER_NO=1234567
+JWNET_PUBLIC_CONFIRM_NO=123456
+```
+
+詳細は `ENV_TEMPLATE.txt` を参照してください。
+
+### 4. Prisma Client の生成
+
+```bash
+pnpm prisma generate
+```
+
+### 5. データベースマイグレーション（開発環境）
+
+```bash
+pnpm prisma migrate dev
+```
+
+### 6. 開発サーバーの起動
+
+```bash
+pnpm dev
+```
+
+ブラウザで http://localhost:3000 にアクセスしてください。
+
+---
+
+## 📦 主要コマンド
+
+### 開発
+
+```bash
+# 開発サーバー起動
+pnpm dev
+
+# ビルド
+pnpm build
+
+# 本番サーバー起動
+pnpm start
+
+# Lint
+pnpm lint
+```
+
+### Prisma
+
+```bash
+# Prisma Client 生成
+pnpm prisma:generate
+
+# Prisma Studio 起動（GUI）
+pnpm prisma:studio
+
+# スキーマを Pull（既存DBから）
+pnpm prisma:pull
+
+# スキーマを Push（開発環境）
+pnpm prisma:push
+
+# マイグレーション作成
+pnpm prisma:migrate
+```
+
+### テスト
+
+```bash
+# Unit Tests
+pnpm test
+
+# API Integration Tests
+pnpm test:api
+
+# E2E Tests
+pnpm test:e2e
+
+# E2E Tests (UI モード)
+pnpm test:e2e:ui
+```
+
+---
+
+## 📊 データベーススキーマ
+
+### スキーマ構成
+
+- **`public`**: Supabase デフォルトスキーマ
+- **`app`**: アプリケーションデータ（組織、店舗、収集実績、請求など）
+- **`auth`**: 認証データ（Supabase Auth）
+
+### 主要テーブル
+
+| テーブル | 説明 |
+|---------|------|
+| `app.organizations` | 組織 |
+| `app.users` | ユーザー |
+| `app.stores` | 店舗 |
+| `app.plans` | 収集予定 |
+| `app.collection_requests` | 収集依頼 |
+| `app.collections` | 収集実績 |
+| `app.billing_items` | 請求明細 |
+| `app.billing_summaries` | 請求サマリー |
+| `app.jwnet_party_combinations` | JWNET 事業者組み合わせマスター |
+| `app.jwnet_waste_codes` | JWNET 廃棄物コードマスター |
+| `app.waste_type_masters` | 廃棄物種別マスター |
+
+### スキーマ変更
+
+スキーマ変更は必ず Prisma マイグレーションを使用してください：
+
+```bash
+# マイグレーション作成
+pnpm prisma migrate dev --name your_migration_name
+
+# マイグレーション適用（本番）
+pnpm prisma migrate deploy
+```
+
+---
+
+## 🔐 認証・認可
+
+### ロール
+
+- `ADMIN`: システム管理者
+- `COLLECTOR`: 収集業者
+- `TRANSPORTER`: 運搬業者
+- `DISPOSER`: 処分業者
+- `EMITTER`: 排出事業者
+- `USER`: 一般ユーザー
+
+### 権限
+
+32種類の権限が定義されています。詳細は `docs/RBAC_SPEC.md` を参照してください。
+
+---
+
+## 📈 本番デプロイ
+
+### Vercel へのデプロイ
+
+詳細な手順は `docs/PRODUCTION_DEPLOYMENT_GUIDE.md` を参照してください。
+
+#### クイックデプロイ
+
+1. **Vercel プロジェクト作成**
+   - Vercel にログイン
+   - GitHub リポジトリを連携
+   - Root Directory を `next-app` に設定
+
+2. **環境変数設定**
+   - Vercel Dashboard で環境変数を設定
+   - `ENV_TEMPLATE.txt` を参照
+
+3. **デプロイ**
+   - `main` ブランチにプッシュで自動デプロイ
+
+---
+
+## 🧪 テスト
+
+### テスト戦略
+
+- **Unit Tests**: Vitest
+- **Integration Tests**: Vitest + Prisma
+- **E2E Tests**: Playwright
+
+### テスト実行
+
+```bash
+# すべてのテストを実行
+pnpm test
+
+# API テストのみ実行
+pnpm test:api
+
+# E2E テストを実行
+pnpm test:e2e
+
+# E2E テストを UI モードで実行
+pnpm test:e2e:ui
+```
+
+### UAT（ユーザー受け入れテスト）
+
+UATチェックリストは `docs/UAT_CHECKLIST.md` を参照してください。
+
+---
+
+## 📝 ドキュメント
+
+### 開発ドキュメント
+
+- **ガードレール設定**: `.cursor/rules/global-rules.md`
+- **スキーマ変更ガイドライン**: `docs/SCHEMA_CHANGE_GUIDELINES.md`
+- **アーキテクチャマイグレーション分析**: `docs/ARCHITECTURE_MIGRATION_ANALYSIS.md`
+
+### 運用ドキュメント
+
+- **本番環境デプロイメントガイド**: `docs/PRODUCTION_DEPLOYMENT_GUIDE.md`
+- **運用手順書**: `docs/OPERATION_GUIDE.md`
+- **UATチェックリスト**: `docs/UAT_CHECKLIST.md`
+
+### 完了レポート
+
+- **Phase 4-A**: `docs/PHASE4A_COMPLETION_REPORT.md`
+- **Phase 4-B**: `docs/PHASE4B_COMPLETION_REPORT.md`
+- **Phase 4-B.5**: `docs/PHASE4B5_COMPLETION_REPORT.md`
+- **Phase 4-C**: `docs/PHASE4C_COMPLETION_REPORT.md`
+- **Phase 5**: `docs/PHASE5_COMPLETION_REPORT.md`
+
+---
+
+## 🛠️ トラブルシューティング
+
+### Issue 1: Prisma Client エラー
+
+**症状**: `PrismaClientInitializationError` が発生
+
+**解決方法**:
+```bash
+pnpm prisma generate
+```
+
+### Issue 2: 環境変数が読み込まれない
+
+**症状**: `DATABASE_URL is undefined`
+
+**解決方法**:
+1. `.env.local` が正しく作成されているか確認
+2. Next.js を再起動
+
+### Issue 3: ビルドエラー
+
+**症状**: `pnpm build` が失敗する
+
+**解決方法**:
+```bash
+# 依存関係を再インストール
+rm -rf node_modules
+pnpm install
+
+# Prisma Client を再生成
+pnpm prisma generate
+
+# 再度ビルド
+pnpm build
+```
+
+---
+
+## 🤝 コントリビューション
+
+### ブランチ戦略
+
+- `main`: 本番環境
+- `develop`: 開発環境
+- `feature/*`: 機能開発
+- `fix/*`: バグ修正
+
+### コミットメッセージ規約
+
+```
+feat: 新機能追加
+fix: バグ修正
+docs: ドキュメント更新
+style: コードフォーマット
+refactor: リファクタリング
+test: テスト追加・修正
+chore: ビルド設定など
+```
+
+### Pull Request
+
+1. `develop` ブランチから `feature/*` ブランチを作成
+2. 実装・テスト
+3. Pull Request を作成
+4. コードレビュー
+5. `develop` にマージ
+
+---
+
+## 📞 サポート
+
+### 問い合わせ
+
+- **Email**: support@baba-waste.example.com
+- **GitHub Issues**: https://github.com/YOUR_USERNAME/BABA-waste/issues
+
+### ドキュメント
+
+- **Next.js**: https://nextjs.org/docs
+- **Prisma**: https://www.prisma.io/docs
+- **Supabase**: https://supabase.com/docs
+- **Ant Design**: https://ant.design/docs/react/introduce
+
+---
+
+## 📄 ライセンス
+
+Proprietary - All Rights Reserved
+
+© 2025 BABA Waste Management System. All rights reserved.
+
+---
+
+## 🙏 謝辞
+
+- **Next.js**: https://nextjs.org/
+- **Prisma**: https://www.prisma.io/
+- **Supabase**: https://supabase.com/
+- **Ant Design**: https://ant.design/
+- **Recharts**: https://recharts.org/
+
+---
+
+**Built with ❤️ by BABA Waste Management System Development Team**
