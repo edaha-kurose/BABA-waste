@@ -42,6 +42,31 @@ export default function LoginPage() {
     }
   }
 
+  const handleQuickLogin = async (email: string, password: string = 'test123') => {
+    setLoading(true)
+    try {
+      const supabase = createBrowserClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        message.error(`クイックログインに失敗しました: ${error.message}`)
+        return
+      }
+
+      if (data.user) {
+        message.success(`${email} でログインしました`)
+        router.push(redirectTo)
+      }
+    } catch (error: any) {
+      message.error(`エラーが発生しました: ${error.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSignUp = async (values: { email: string; password: string; name: string }) => {
     setLoading(true)
     try {
@@ -211,17 +236,35 @@ export default function LoginPage() {
           </div>
         </Form>
 
-        {/* 開発環境用のテストアカウント情報 */}
-        {process.env.NODE_ENV === 'development' && (
+        {/* テスト用クイックログイン */}
+        {(process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ENABLE_QUICK_LOGIN === 'true') && !isSignUp && (
           <Card
             size="small"
-            style={{ marginTop: 16, backgroundColor: '#f0f2f5' }}
+            style={{ marginTop: 16, backgroundColor: '#fff9e6', borderColor: '#ffd666' }}
           >
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              <strong>テストアカウント:</strong><br />
-              Email: test@example.com<br />
-              Password: test123
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+              <strong>🚀 クイックログイン（テスト用）</strong>
             </Text>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <Button
+                size="small"
+                block
+                onClick={() => handleQuickLogin('admin@example.com')}
+                loading={loading}
+                style={{ backgroundColor: '#e6f7ff', borderColor: '#91d5ff' }}
+              >
+                👤 管理者でログイン (admin@example.com)
+              </Button>
+              <Button
+                size="small"
+                block
+                onClick={() => handleQuickLogin('user@example.com')}
+                loading={loading}
+                style={{ backgroundColor: '#f0f5ff', borderColor: '#adc6ff' }}
+              >
+                👥 ユーザーでログイン (user@example.com)
+              </Button>
+            </Space>
           </Card>
         )}
       </Card>
