@@ -12,3 +12,6 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
+// デフォルトエクスポートも提供（互換性のため）
+export default prisma
+

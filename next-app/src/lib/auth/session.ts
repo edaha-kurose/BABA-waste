@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { createBrowserClient } from './supabase'
+import { createBrowserClient } from './supabase-browser'
 
 /**
  * 現在のユーザーとセッションを取得するReact Hook

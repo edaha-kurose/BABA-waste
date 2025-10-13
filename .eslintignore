@@ -1,0 +1,23 @@
+# Old Vite+React project
+src/
+contracts/
+scripts/
+fixtures/
+sample-data/
+
+# Build outputs
+dist/
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Testing
+coverage/
+
+# Misc
+.DS_Store
+*.log
+
