@@ -1,0 +1,219 @@
+// Prisma Schema for BABA Waste Management System
+// Generated from existing Supabase PostgreSQL database
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+// ============================================================================
+// app schema - Application tables
+// ============================================================================
+
+model Organization {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String   @db.VarChar(255)
+  code       String   @unique @db.VarChar(50)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by String?  @db.Uuid
+  updated_by String?  @db.Uuid
+  deleted_at DateTime? @db.Timestamptz(6)
+
+  // Relations
+  stores            Store[]
+  userOrgRoles      UserOrgRole[]
+  itemMaps          ItemMap[]
+  plans             Plan[]
+  collectionRequests CollectionRequest[]
+  collections       Collection[]
+
+  @@map("organizations")
+  @@schema("app")
+}
+
+model UserOrgRole {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  org_id     String   @db.Uuid
+  role       String   @db.VarChar(50)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  // Relations
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, org_id, role])
+  @@map("user_org_roles")
+  @@schema("app")
+}
+
+model Store {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id             String    @db.Uuid
+  store_code         String    @db.VarChar(50)
+  name               String    @db.VarChar(255)
+  address            String?   @db.VarChar(500)
+  area               String?   @db.VarChar(100)
+  phone              String?   @db.VarChar(50)
+  postal_code        String?   @db.VarChar(20)
+  address1           String?   @db.VarChar(255)
+  address2           String?   @db.VarChar(255)
+  area_name          String?   @db.VarChar(100)
+  area_manager_code  String?   @db.VarChar(50)
+  emitter_no         String?   @db.VarChar(50)
+  opening_date       DateTime? @db.Date
+  closing_date       DateTime? @db.Date
+  is_active          Boolean   @default(true)
+  is_temporary       Boolean   @default(false)
+  is_managed         Boolean   @default(false)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by         String?   @db.Uuid
+  updated_by         String?   @db.Uuid
+  deleted_at         DateTime? @db.Timestamptz(6)
+
+  // Relations
+  organization       Organization        @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  plans              Plan[]
+  collectionRequests CollectionRequest[]
+  collections        Collection[]
+
+  @@unique([org_id, store_code])
+  @@map("stores")
+  @@schema("app")
+}
+
+model ItemMap {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                String    @db.Uuid
+  item_label            String    @db.VarChar(255)
+  jwnet_code            String?   @db.VarChar(50)
+  hazard                Boolean   @default(false)
+  default_unit          String?   @db.VarChar(10)
+  density_t_per_m3      Float?    @db.Real
+  disposal_method_code  String?   @db.VarChar(50)
+  notes                 String?   @db.Text
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by            String?   @db.Uuid
+  updated_by            String?   @db.Uuid
+  deleted_at            DateTime? @db.Timestamptz(6)
+
+  // Relations
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  plans        Plan[]
+
+  @@unique([org_id, item_label])
+  @@map("item_maps")
+  @@schema("app")
+}
+
+model Plan {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id               String    @db.Uuid
+  store_id             String    @db.Uuid
+  planned_pickup_date  DateTime  @db.Date
+  item_name            String    @db.VarChar(255)
+  planned_quantity     Float     @db.Real
+  unit                 String    @db.VarChar(10)
+  area_or_city         String?   @db.VarChar(100)
+  notes                String?   @db.Text
+  status               String    @default("pending") @db.VarChar(50)
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by           String?   @db.Uuid
+  updated_by           String?   @db.Uuid
+  deleted_at           DateTime? @db.Timestamptz(6)
+
+  // Relations
+  organization       Organization        @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  store              Store               @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  itemMap            ItemMap?            @relation(fields: [item_name], references: [item_label])
+  collectionRequests CollectionRequest[]
+
+  @@map("plans")
+  @@schema("app")
+}
+
+model CollectionRequest {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                   String    @db.Uuid
+  store_id                 String    @db.Uuid
+  collector_id             String?   @db.Uuid
+  plan_id                  String    @db.Uuid
+  request_date             DateTime  @default(now()) @db.Timestamptz(6)
+  status                   String    @default("PENDING") @db.VarChar(50)
+  requested_pickup_date    DateTime? @db.Timestamptz(6)
+  preferred_pickup_date    DateTime? @db.Timestamptz(6)
+  confirmed_pickup_date    DateTime? @db.Timestamptz(6)
+  confirmed_pickup_time    String?   @db.VarChar(50)
+  notes                    String?   @db.Text
+  jwnet_reservation_id     String?   @db.VarChar(255)
+  created_at               DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by               String?   @db.Uuid
+  updated_by               String?   @db.Uuid
+  deleted_at               DateTime? @db.Timestamptz(6)
+
+  // Relations
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  store        Store        @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  plan         Plan         @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+  collections  Collection[]
+
+  @@map("collection_requests")
+  @@schema("app")
+}
+
+model Collection {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                  String    @db.Uuid
+  collection_request_id   String    @db.Uuid
+  store_id                String    @db.Uuid
+  collector_id            String?   @db.Uuid
+  waste_type_id           String?   @db.Uuid
+  actual_pickup_date      DateTime  @db.Timestamptz(6)
+  actual_pickup_time      String    @db.VarChar(50)
+  status                  String    @default("PENDING") @db.VarChar(50)
+  actual_quantity         Float     @db.Real
+  quantity                Float     @db.Real
+  unit                    String    @db.VarChar(10)
+  driver_name             String?   @db.VarChar(255)
+  vehicle_number          String?   @db.VarChar(50)
+  notes                   String?   @db.Text
+  jwnet_registration_id   String?   @db.VarChar(255)
+  collected_at            DateTime? @db.Timestamptz(6)
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by              String?   @db.Uuid
+  updated_by              String?   @db.Uuid
+  deleted_at              DateTime? @db.Timestamptz(6)
+
+  // Relations
+  organization       Organization      @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  collectionRequest  CollectionRequest @relation(fields: [collection_request_id], references: [id], onDelete: Cascade)
+  store              Store             @relation(fields: [store_id], references: [id], onDelete: Cascade)
+
+  @@map("collections")
+  @@schema("app")
+}
+
+// ============================================================================
+// NOTE: 以下のテーブルは段階的に追加予定
+// - ImportHistory
+// - JwnetWasteCode
+// - WasteTypeMaster
+// - StoreCollectorAssignment
+// - Collector (User統合検討)
+// - DisposalSite
+// - JwnetReservation
+// - JwnetRegistration
+// ============================================================================
+
