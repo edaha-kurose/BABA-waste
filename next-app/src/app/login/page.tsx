@@ -249,20 +249,29 @@ export default function LoginPage() {
               <Button
                 size="small"
                 block
-                onClick={() => handleQuickLogin('admin@example.com')}
+                onClick={() => handleQuickLogin('admin@test.com')}
                 loading={loading}
                 style={{ backgroundColor: '#e6f7ff', borderColor: '#91d5ff' }}
               >
-                👤 管理者でログイン (admin@example.com)
+                👤 管理者でログイン (admin@test.com)
               </Button>
               <Button
                 size="small"
                 block
-                onClick={() => handleQuickLogin('user@example.com')}
+                onClick={() => handleQuickLogin('collector@test.com')}
                 loading={loading}
                 style={{ backgroundColor: '#f0f5ff', borderColor: '#adc6ff' }}
               >
-                👥 ユーザーでログイン (user@example.com)
+                👥 収集業者でログイン (collector@test.com)
+              </Button>
+              <Button
+                size="small"
+                block
+                onClick={() => handleQuickLogin('emitter@test.com')}
+                loading={loading}
+                style={{ backgroundColor: '#f0f5ff', borderColor: '#adc6ff' }}
+              >
+                🏭 排出事業者でログイン (emitter@test.com)
               </Button>
             </Space>
           </Card>
