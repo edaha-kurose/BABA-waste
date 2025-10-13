@@ -2,14 +2,16 @@
 // Generated from existing Supabase PostgreSQL database
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DATABASE_URL")
+  schemas   = ["public", "app", "auth"]
 }
 
 // ============================================================================
@@ -108,9 +110,9 @@ model ItemMap {
 
   // Relations
   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
-  plans        Plan[]
 
   @@unique([org_id, item_label])
+  @@index([item_label])
   @@map("item_maps")
   @@schema("app")
 }
@@ -135,7 +137,6 @@ model Plan {
   // Relations
   organization       Organization        @relation(fields: [org_id], references: [id], onDelete: Cascade)
   store              Store               @relation(fields: [store_id], references: [id], onDelete: Cascade)
-  itemMap            ItemMap?            @relation(fields: [item_name], references: [item_label])
   collectionRequests CollectionRequest[]
 
   @@map("plans")

@@ -47,16 +47,28 @@ pnpm dev
 ```
 next-app/
 ├── src/
-│   ├── app/              # App Router
-│   │   ├── api/         # BFF API Routes
-│   │   ├── dashboard/   # ダッシュボード
-│   │   └── ...
-│   ├── components/       # Reactコンポーネント
-│   └── lib/             # ユーティリティ
-│       └── prisma.ts    # Prismaクライアント
+│   ├── app/                    # App Router
+│   │   ├── api/               # BFF API Routes
+│   │   │   ├── health/        # ヘルスチェック
+│   │   │   ├── organizations/ # 組織管理API
+│   │   │   ├── stores/        # 店舗管理API
+│   │   │   ├── plans/         # 収集予定API
+│   │   │   └── collections/   # 収集実績API
+│   │   ├── dashboard/         # ダッシュボード
+│   │   │   ├── organizations/ # 組織管理画面
+│   │   │   └── layout.tsx     # ダッシュボードレイアウト
+│   │   ├── login/             # ログインページ
+│   │   ├── layout.tsx         # ルートレイアウト
+│   │   ├── page.tsx           # トップページ
+│   │   └── globals.css        # グローバルスタイル
+│   ├── components/             # Reactコンポーネント
+│   └── lib/                   # ユーティリティ
+│       ├── prisma.ts          # Prismaクライアント
+│       └── auth.ts            # 認証ヘルパー
 ├── prisma/
-│   └── schema.prisma    # Prismaスキーマ
-└── public/              # 静的ファイル
+│   └── schema.prisma          # Prismaスキーマ
+├── middleware.ts              # Next.js Middleware（認証）
+└── package.json
 ```
 
 ## 🛠️ 利用可能なスクリプト
@@ -85,12 +97,79 @@ next-app/
 ### BFF (Backend for Frontend)
 Next.js API Routesを使用してBFFレイヤーを実装。
 
-- **API Routes**: `/app/api/*` - RESTful API
-- **Server Actions**: `/app/actions/*` - Form Actions
+#### 実装済みAPI
+- `GET /api/health` - ヘルスチェック
+- `GET /api/organizations` - 組織一覧取得
+- `POST /api/organizations` - 組織作成
+- `GET /api/organizations/[id]` - 組織詳細取得
+- `PATCH /api/organizations/[id]` - 組織更新
+- `DELETE /api/organizations/[id]` - 組織削除
+- `GET /api/stores` - 店舗一覧取得（検索・フィルタ対応）
+- `POST /api/stores` - 店舗作成
+- `GET /api/stores/[id]` - 店舗詳細取得
+- `PATCH /api/stores/[id]` - 店舗更新
+- `DELETE /api/stores/[id]` - 店舗削除
+- `GET /api/plans` - 収集予定一覧取得
+- `POST /api/plans` - 収集予定作成
+- `GET /api/plans/[id]` - 収集予定詳細取得
+- `PATCH /api/plans/[id]` - 収集予定更新
+- `DELETE /api/plans/[id]` - 収集予定削除
+- `GET /api/collections` - 収集実績一覧取得
+- `POST /api/collections` - 収集実績作成
+- `GET /api/collections/[id]` - 収集実績詳細取得
+- `PATCH /api/collections/[id]` - 収集実績更新
+- `DELETE /api/collections/[id]` - 収集実績削除
 
 ### Data Flow
 ```
-UI (React) → Server Actions / API Routes → Prisma → Supabase PostgreSQL
+UI (React) → API Routes → Prisma → Supabase PostgreSQL
+```
+
+## 🔐 認証
+
+### Middleware
+`middleware.ts`で認証を管理。
+
+- 開発環境では認証をバイパス
+- `/api/*`と`/dashboard/*`は認証必須
+- `/api/health`は認証不要
+
+### 認証フロー
+1. ユーザーがログインページでメール/パスワードを入力
+2. Supabase Authで認証
+3. JWTトークンをCookieに保存
+4. Middlewareでトークン検証
+5. 認証済みユーザーのみアクセス許可
+
+## 📊 データベーススキーマ
+
+### 実装済みテーブル
+- `organizations` - 組織
+- `user_org_roles` - ユーザー組織ロール
+- `stores` - 店舗
+- `item_maps` - 品目マッピング
+- `plans` - 収集予定
+- `collection_requests` - 収集依頼
+- `collections` - 収集実績
+
+## 🧪 テスト
+
+### API テスト
+```bash
+# Health Check
+curl http://localhost:3000/api/health
+
+# Organizations API
+curl http://localhost:3000/api/organizations
+
+# Stores API
+curl "http://localhost:3000/api/stores?org_id=xxx"
+
+# Plans API
+curl "http://localhost:3000/api/plans?org_id=xxx&from_date=2024-01-01"
+
+# Collections API
+curl "http://localhost:3000/api/collections?org_id=xxx"
 ```
 
 ## 📚 ドキュメント
@@ -99,13 +178,33 @@ UI (React) → Server Actions / API Routes → Prisma → Supabase PostgreSQL
 - [技術的負債ステータス](../docs/TECHNICAL_DEBT_STATUS.md)
 - [アーキテクチャ分析](../docs/ARCHITECTURE_MIGRATION_ANALYSIS.md)
 
+## 🎯 Phase 2-2 実装完了
+
+### ✅ 完了した機能
+1. **Stores API** - 店舗管理（CRUD + 検索・フィルタ）
+2. **Plans API** - 収集予定管理（CRUD + ステータス管理）
+3. **Collections API** - 収集実績管理（CRUD + 実績登録）
+4. **ダッシュボードUI** - 統計表示、組織一覧画面
+5. **認証システム** - Middleware、ログインページ、認証ヘルパー
+
+### 📈 進捗状況
+- ✅ Next.js 14 + Prisma セットアップ
+- ✅ Organizations API 完成
+- ✅ Stores API 完成
+- ✅ Plans API 完成
+- ✅ Collections API 完成
+- ✅ ダッシュボードUI 基盤構築
+- ✅ 認証・認可統合
+- ⏳ E2Eテスト
+- ⏳ 既存Viteアプリからの段階的移行
+
 ## 🔗 関連リンク
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Supabase Documentation](https://supabase.com/docs)
+- [Ant Design Documentation](https://ant.design/components/overview/)
 
 ---
 
-**Status**: Phase 2 進行中 🚧
-
+**Status**: Phase 2-2 完了 ✅
