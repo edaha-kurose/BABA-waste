@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+echo "🔍 Pre-commit チェックを実行中..."
+
+# 型チェック & Lint（存在すれば）
+[ -f package.json ] && { pnpm typecheck || true; pnpm lint || true; }
+
+# DDL変更検知 → チェックリスト
+CHANGED_FILES=$(git diff --cached --name-only)
+if echo "$CHANGED_FILES" | grep -qE "\b(db/ddl/|prisma/migrations/)"; then
+  echo "⚠️ DDL/マイグレーションの変更を検出。"
+  echo "📋 チェック:"
+  echo "  [ ] 影響範囲: pnpm schema:impact -- --table <t> [--column <c>]"
+  echo "  [ ] 型再生成: pnpm gen:db-types && pnpm codegen"
+  echo "  [ ] テスト: pnpm test || true"
+  printf "続行しますか？ (y/N) "
+  read ANS
+  if [ "$ANS" != "y" ] && [ "$ANS" != "Y" ]; then
+    echo "中断しました。"
+    exit 1
+  fi
+fi
+
+echo "✅ OK"

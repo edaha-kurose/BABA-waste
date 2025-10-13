@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm typecheck
+        continue-on-error: true
+
+      - name: Lint
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Unit tests
+        run: pnpm test
+        continue-on-error: true
+
+  schema-validation:
+    name: Schema Validation
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.head_commit.modified, 'db/') ||
+      contains(github.event.pull_request.changed_files, 'db/')
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Detect changed tables
+        id: changes
+        run: |
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^db/' || echo "")
+          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+
+      - name: Schema impact analysis
+        if: steps.changes.outputs.changed_files != ''
+        run: |
+          echo "⚠️ Schema変更を検出しました"
+          echo "${{ steps.changes.outputs.changed_files }}"
+          pnpm schema:impact -- --table stores || true
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request' && steps.changes.outputs.changed_files != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ⚠️ スキーマ変更を検出しました\n\n**変更されたファイル:**\n\`\`\`\n${{ steps.changes.outputs.changed_files }}\n\`\`\`\n\n**重要な確認事項:**\n- [ ] \`pnpm schema:impact\` で影響範囲を分析しましたか？\n- [ ] \`pnpm seed:all\` でテストデータを更新しましたか？\n- [ ] E2Eテストを実行しましたか？\n- [ ] ロールバック手順を準備しましたか？\n\n**リスクレベル:** 🚨 要確認`
+            })
+

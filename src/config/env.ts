@@ -1,37 +1,40 @@
 // ============================================================================
-// 環境変数設定
+// 環境変数設定（後方互換性のため維持）
 // 作成日: 2025-09-16
+// 更新日: 2025-10-13 - env.validation.ts に移行
 // 目的: 環境変数の管理とデフォルト値の設定
 // ============================================================================
 
+/**
+ * @deprecated env.validation.ts の env を使用してください
+ * 後方互換性のため残していますが、新規コードでは使用しないでください
+ */
+
+import { env, isDevelopment, isProduction, isDebugMode, getDataBackendMode as getMode } from './env.validation'
+
 // Supabase設定
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+export const SUPABASE_URL = env.VITE_SUPABASE_URL
+export const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY
 
 // データバックエンド設定
-export const DATA_BACKEND_MODE = import.meta.env.VITE_DATA_BACKEND_MODE || 'dexie'
-export const DATA_BACKEND_OVERRIDES = import.meta.env.VITE_DATA_BACKEND_OVERRIDES || ''
+export const DATA_BACKEND_MODE = env.VITE_DATA_BACKEND_MODE
+export const DATA_BACKEND_OVERRIDES = env.VITE_DATA_BACKEND_OVERRIDES
 
 // データ参照先設定（相対パス）
-export const DATA_SOURCE_PATH = import.meta.env.VITE_DATA_SOURCE_PATH || '.'
-export const JWNET_FOLDER_PATH = import.meta.env.VITE_JWNET_FOLDER_PATH || './JWNET'
+export const DATA_SOURCE_PATH = env.VITE_DATA_SOURCE_PATH
+export const JWNET_FOLDER_PATH = env.VITE_JWNET_FOLDER_PATH
 
 // JWNET設定
-export const JWNET_GATEWAY_BASEURL = import.meta.env.VITE_JWNET_GATEWAY_BASEURL || 'https://gw.internal/jwnet'
-export const JWNET_GATEWAY_TOKEN = import.meta.env.VITE_JWNET_GATEWAY_TOKEN || 'your-gateway-token'
+export const JWNET_GATEWAY_BASEURL = env.VITE_JWNET_GATEWAY_BASEURL || 'https://gw.internal/jwnet'
+export const JWNET_GATEWAY_TOKEN = env.VITE_JWNET_GATEWAY_TOKEN || 'your-gateway-token'
 
 // 開発モード設定
-export const IS_DEVELOPMENT = import.meta.env.DEV
-export const IS_PRODUCTION = import.meta.env.PROD
+export const IS_DEVELOPMENT = isDevelopment
+export const IS_PRODUCTION = isProduction
 
 // デバッグ設定
-export const DEBUG_MODE = import.meta.env.VITE_DEBUG === 'true' || IS_DEVELOPMENT
+export const DEBUG_MODE = isDebugMode
 
 // データバックエンドモード取得関数
-export const getDataBackendMode = (): 'dexie' | 'supabase' | 'dual' => {
-  const mode = DATA_BACKEND_MODE.toLowerCase()
-  if (mode === 'supabase') return 'supabase'
-  if (mode === 'dual') return 'dual'
-  return 'dexie' // デフォルトはdexie
-}
+export const getDataBackendMode = getMode
 

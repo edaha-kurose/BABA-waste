@@ -1,0 +1,18 @@
+{
+  "scripts": {
+    "schema:impact": "node scripts/analyze-schema-impact.mjs",
+    "openapi:generate": "openapi-typescript contracts/openapi.yaml -o contracts/generated/api-types.ts",
+    "openapi:validate": "spectral lint contracts/openapi.yaml",
+    "prisma:generate": "prisma generate",
+    "codegen": "pnpm openapi:generate && pnpm prisma:generate",
+    "preflight": "pnpm openapi:validate && pnpm codegen && pnpm typecheck",
+    "gen:db-types": "supabase gen types typescript --project-id $NEXT_PUBLIC_SUPABASE_PROJECT_ID > lib/database.types.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run",
+    "test:e2e": "playwright test",
+    "dev": "next dev"
+  }
+}

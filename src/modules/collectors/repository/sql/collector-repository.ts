@@ -64,7 +64,7 @@ export class SqlCollectorRepository implements Repository<Collector, CollectorCr
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('collectors')
       .update({
@@ -73,6 +73,8 @@ export class SqlCollectorRepository implements Repository<Collector, CollectorCr
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete collector: ${error.message}`)
+    }
   }
 }

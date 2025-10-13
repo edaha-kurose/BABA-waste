@@ -1,0 +1,36 @@
+name: Guardrail Orchestrator
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - uses: pnpm/action-setup@v3
+        with: { version: 9 }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile || pnpm install
+
+      - name: Build runbook index & incident
+        run: |
+          node tools/orchestrator/src/index.ts
+        env:
+          SCHEMA_IMPACT_TABLE: ${{ vars.SCHEMA_IMPACT_TABLE || '' }}
+          SCHEMA_IMPACT_COLUMN: ${{ vars.SCHEMA_IMPACT_COLUMN || '' }}
+
+      - name: Schema impact (example)
+        run: |
+          node scripts/analyze-schema-impact.mjs --table ${TABLE:-collection_records}
+        env:
+          TABLE: ${{ vars.SCHEMA_IMPACT_TABLE || 'collection_records' }}

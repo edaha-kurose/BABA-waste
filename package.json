@@ -9,9 +9,19 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test",
+    "test:console": "playwright test tests/e2e/console-errors.spec.ts",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "schema:impact": "node scripts/analyze-schema-impact.mjs",
+    "seed:reset": "psql $DATABASE_URL -f db/seed/999_cleanup.sql",
+    "seed:orgs": "psql $DATABASE_URL -f db/seed/001_organizations.sql",
+    "seed:users": "psql $DATABASE_URL -f db/seed/002_users.sql",
+    "seed:stores": "psql $DATABASE_URL -f db/seed/003_stores.sql",
+    "seed:items": "psql $DATABASE_URL -f db/seed/004_item_maps.sql",
+    "seed:all": "pnpm seed:reset && pnpm seed:orgs && pnpm seed:users && pnpm seed:stores && pnpm seed:items",
+    "prepare": "husky"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.2",
@@ -43,6 +53,7 @@
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
+    "husky": "^9.1.7",
     "postcss": "^8.4.31",
     "prettier": "^3.1.0",
     "tailwindcss": "^3.3.5",

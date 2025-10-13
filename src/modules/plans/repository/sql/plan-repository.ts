@@ -64,7 +64,7 @@ export class SqlPlanRepository implements Repository<Plan, PlanCreate, PlanUpdat
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('plans')
       .update({
@@ -74,6 +74,8 @@ export class SqlPlanRepository implements Repository<Plan, PlanCreate, PlanUpdat
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete plan: ${error.message}`)
+    }
   }
 }

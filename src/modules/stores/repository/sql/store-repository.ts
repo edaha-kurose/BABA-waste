@@ -64,7 +64,7 @@ export class SqlStoreRepository implements Repository<Store, StoreCreate, StoreU
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('stores')
       .update({
@@ -73,6 +73,8 @@ export class SqlStoreRepository implements Repository<Store, StoreCreate, StoreU
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete store: ${error.message}`)
+    }
   }
 }

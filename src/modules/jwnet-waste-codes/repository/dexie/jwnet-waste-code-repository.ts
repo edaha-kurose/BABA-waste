@@ -87,10 +87,12 @@ export class DexieJwnetWasteCodeRepository implements Repository<JwnetWasteCode,
     return updated
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     await ensureDatabaseInitialized()
     const count = await this.db.jwnetWasteCodes.where('id').equals(id).delete()
-    return count > 0
+    if (count === 0) {
+      throw new Error(`JwnetWasteCode with id ${id} not found`)
+    }
   }
 
   async softDelete(id: string): Promise<boolean> {

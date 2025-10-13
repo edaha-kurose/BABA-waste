@@ -48,9 +48,11 @@ export class DexieItemMapRepository implements Repository<ItemMap, ItemMapCreate
     return updated
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const existing = await this.findById(id)
-    if (!existing) return false
+    if (!existing) {
+      throw new Error(`ItemMap with id ${id} not found`)
+    }
 
     const updated: ItemMap = {
       ...existing,
@@ -60,6 +62,5 @@ export class DexieItemMapRepository implements Repository<ItemMap, ItemMapCreate
     }
 
     await this.db.itemMaps.put(updated)
-    return true
   }
 }

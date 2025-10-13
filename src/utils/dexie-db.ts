@@ -51,6 +51,8 @@ export class WasteManagementDB extends Dexie {
   auditLogs!: Table<AuditLog>
   stagePlans!: Table<StagePlan>
   approvals!: Table<Approval>
+  collectors!: Table<Collector>
+  managedStores!: Table<ManagedStore>
   storeCollectorAssignments!: Table<StoreCollectorAssignment>
   collectionRequests!: Table<CollectionRequest>
   collections!: Table<Collection>
@@ -102,8 +104,11 @@ export class WasteManagementDB extends Dexie {
       // 承認関連
       approvals: 'id, org_id, plan_id, approved_by, approved_at',
       
-      // 収集業者関連（統合済み - usersテーブルを使用）
-      // collectorsテーブルは削除し、usersテーブルでrole=COLLECTORのユーザーを管理
+      // 収集業者関連
+      collectors: 'id, org_id, email, name, company_name, phone, address, license_number, jwnet_subscriber_id, jwnet_public_confirmation_id, is_active, [org_id+email], [org_id+is_active]',
+      
+      // 管理店舗関連
+      managedStores: 'id, org_id, store_code, name, area_name, area_manager_code, phone, postal_code, address1, address2, is_managed, is_active, [org_id+store_code], [org_id+area_manager_code]',
       
       // 店舗-収集業者割り当て関連
       storeCollectorAssignments: 'id, org_id, store_id, collector_id, priority, is_active, [org_id+store_id], [org_id+collector_id]',

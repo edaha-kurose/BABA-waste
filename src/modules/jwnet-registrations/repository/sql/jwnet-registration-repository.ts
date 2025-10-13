@@ -88,7 +88,7 @@ export class SqlJwnetRegistrationRepository implements Repository<JwnetRegistrat
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('jwnet_registrations')
       .update({
@@ -98,6 +98,8 @@ export class SqlJwnetRegistrationRepository implements Repository<JwnetRegistrat
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete JWNET registration: ${error.message}`)
+    }
   }
 }

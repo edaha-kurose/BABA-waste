@@ -101,7 +101,7 @@ export class SqlCollectionRequestRepository implements Repository<CollectionRequ
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('collection_requests')
       .update({
@@ -111,6 +111,8 @@ export class SqlCollectionRequestRepository implements Repository<CollectionRequ
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete collection request: ${error.message}`)
+    }
   }
 }

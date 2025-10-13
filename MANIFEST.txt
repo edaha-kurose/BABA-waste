@@ -1,0 +1,51 @@
+./
+  README_DROPIN.md (1035 bytes)
+  package.scripts.sample.json (768 bytes)
+docs/
+  COLLECTION_RECORDS_SCHEMA_IMPACT_ANALYSIS.md (55 bytes)
+  COMPLETE_SCHEMA_VALIDATION_REPORT.md (47 bytes)
+  CURSOR_COMMON_SETTINGS_MIN.md (1592 bytes)
+docs/guardrails/
+  AI_DEVELOPMENT_SCHEMA_SAFETY_GUIDE.md (26155 bytes)
+  CURSOR_COMMON_SETTINGS_v3.3_BFF.md (51357 bytes)
+  Integration_Guide_v3.2.md (692 bytes)
+  Manager_Decision_Matrix_v3.2.md (322 bytes)
+  Memory_Seeds_Manager_v3.2.md (359 bytes)
+  UserRules_Manager_v3.2.md (705 bytes)
+docs/insights/
+  DEVELOPMENT_INSIGHTS.md (15436 bytes)
+  development-points-record.md (21977 bytes)
+docs/specifications/
+  SCHEMA_CHANGE_GUIDELINES.md (1480 bytes)
+docs/runbooks/
+  _prompt-kickoff.md (453 bytes)
+  db-preflight.md (250 bytes)
+  dependency-order.md (139 bytes)
+  numbering-playbook.md (179 bytes)
+  rls-diagnosis.md (196 bytes)
+  seed-reset.md (148 bytes)
+docs/runbooks/incidents/
+scripts/
+  analyze-schema-impact.mjs (3496 bytes)
+  analyze-schema-impact.ts (65 bytes)
+scripts/sql/
+  numbering_cte_template.sql (612 bytes)
+  preflight.sql (964 bytes)
+  seed_template.sql (471 bytes)
+tools/
+tools/orchestrator/
+tools/orchestrator/src/
+  index.ts (1463 bytes)
+.github/
+.github/workflows/
+  guardrail-orchestrator.yml (947 bytes)
+  schema-validation.yml.example (806 bytes)
+.husky/
+  pre-commit.example (800 bytes)
+tests/
+tests/helpers/
+  console-monitor.ts (1440 bytes)
+tests/e2e/
+  console-errors.spec.ts (505 bytes)
+contracts/
+  openapi.yaml (68 bytes)

@@ -88,7 +88,7 @@ export class SqlJwnetReservationRepository implements Repository<JwnetReservatio
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('jwnet_reservations')
       .update({
@@ -98,6 +98,8 @@ export class SqlJwnetReservationRepository implements Repository<JwnetReservatio
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete JWNET reservation: ${error.message}`)
+    }
   }
 }

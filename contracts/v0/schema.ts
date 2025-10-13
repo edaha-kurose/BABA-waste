@@ -465,6 +465,10 @@ export const DisposalSiteCreateSchema = DisposalSiteSchema.omit({
 
 export const DisposalSiteUpdateSchema = DisposalSiteCreateSchema.partial()
 
+export type DisposalSite = z.infer<typeof DisposalSiteSchema>
+export type DisposalSiteCreate = z.infer<typeof DisposalSiteCreateSchema>
+export type DisposalSiteUpdate = z.infer<typeof DisposalSiteUpdateSchema>
+
 export const CollectionRequestSchema = OrgScopedSchema.extend({
   store_id: z.string().uuid(),
   collector_id: z.string().uuid(),

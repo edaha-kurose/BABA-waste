@@ -88,7 +88,7 @@ export class SqlCollectionRepository implements Repository<Collection, Collectio
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('collections')
       .update({
@@ -98,6 +98,8 @@ export class SqlCollectionRepository implements Repository<Collection, Collectio
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete collection: ${error.message}`)
+    }
   }
 }

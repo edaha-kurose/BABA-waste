@@ -64,7 +64,7 @@ export class SqlItemMapRepository implements Repository<ItemMap, ItemMapCreate, 
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('item_maps')
       .update({
@@ -74,6 +74,8 @@ export class SqlItemMapRepository implements Repository<ItemMap, ItemMapCreate, 
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete item map: ${error.message}`)
+    }
   }
 }

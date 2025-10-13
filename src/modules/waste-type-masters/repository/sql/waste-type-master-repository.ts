@@ -189,7 +189,7 @@ export class SqlWasteTypeMasterRepository implements Repository<WasteTypeMaster,
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('waste_type_masters')
       .delete()
@@ -198,8 +198,6 @@ export class SqlWasteTypeMasterRepository implements Repository<WasteTypeMaster,
     if (error) {
       throw new Error(`Failed to delete waste type master: ${error.message}`)
     }
-
-    return true
   }
 
   async softDelete(id: string): Promise<boolean> {

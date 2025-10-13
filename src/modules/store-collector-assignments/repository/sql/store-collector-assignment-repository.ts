@@ -88,7 +88,7 @@ export class SqlStoreCollectorAssignmentRepository implements Repository<StoreCo
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('store_collector_assignments')
       .update({
@@ -98,6 +98,8 @@ export class SqlStoreCollectorAssignmentRepository implements Repository<StoreCo
       })
       .eq('id', id)
 
-    return !error
+    if (error) {
+      throw new Error(`Failed to delete store collector assignment: ${error.message}`)
+    }
   }
 }

@@ -48,9 +48,11 @@ export class DexiePlanRepository implements Repository<Plan, PlanCreate, PlanUpd
     return updated
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const existing = await this.findById(id)
-    if (!existing) return false
+    if (!existing) {
+      throw new Error(`Plan with id ${id} not found`)
+    }
 
     const updated: Plan = {
       ...existing,
@@ -60,6 +62,5 @@ export class DexiePlanRepository implements Repository<Plan, PlanCreate, PlanUpd
     }
 
     await this.db.plans.put(updated)
-    return true
   }
 }

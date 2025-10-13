@@ -71,9 +71,11 @@ export class DexieStoreCollectorAssignmentRepository implements Repository<Store
     return updated
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const existing = await this.findById(id)
-    if (!existing) return false
+    if (!existing) {
+      throw new Error(`StoreCollectorAssignment with id ${id} not found`)
+    }
 
     const updated: StoreCollectorAssignment = {
       ...existing,
@@ -83,6 +85,5 @@ export class DexieStoreCollectorAssignmentRepository implements Repository<Store
     }
 
     await this.db.storeCollectorAssignments.put(updated)
-    return true
   }
 }

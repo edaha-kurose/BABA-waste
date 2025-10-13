@@ -139,7 +139,7 @@ export class SqlJwnetWasteCodeRepository implements Repository<JwnetWasteCode, J
     return result
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('jwnet_waste_codes')
       .delete()
@@ -148,8 +148,6 @@ export class SqlJwnetWasteCodeRepository implements Repository<JwnetWasteCode, J
     if (error) {
       throw new Error(`Failed to delete JWNET waste code: ${error.message}`)
     }
-
-    return true
   }
 
   async softDelete(id: string): Promise<boolean> {

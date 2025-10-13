@@ -46,9 +46,11 @@ export class DexieCollectorRepository implements Repository<Collector, Collector
     return updated
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     const existing = await this.db.collectors.get(id)
-    if (!existing) return false
+    if (!existing) {
+      throw new Error(`Collector with id ${id} not found`)
+    }
 
     const updated: Collector = {
       ...existing,
@@ -56,6 +58,5 @@ export class DexieCollectorRepository implements Repository<Collector, Collector
       updated_at: new Date().toISOString(),
     }
     await this.db.collectors.put(updated)
-    return true
   }
 }

@@ -1,0 +1,82 @@
+name: Schema Validation
+
+on:
+  pull_request:
+    paths:
+      - 'db/**/*.sql'
+      - 'prisma/**'
+      - 'contracts/openapi.yaml'
+
+jobs:
+  schema-impact:
+    name: Schema Impact Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Detect changed tables
+        id: detect
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.sha }} | grep -E '^db/' || echo "")
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run schema impact analysis
+        id: impact
+        run: |
+          # デフォルトで主要テーブルを分析
+          TABLES="stores users collection_requests collections"
+          for table in $TABLES; do
+            echo "📊 Analyzing table: $table"
+            pnpm schema:impact -- --table $table || true
+          done
+
+      - name: Comment PR with checklist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## ⚠️ スキーマ変更を検出しました
+
+**変更されたファイル:**
+\`\`\`
+${{ steps.detect.outputs.files }}
+\`\`\`
+
+**必須チェックリスト:**
+- [ ] \`pnpm schema:impact -- --table <table_name>\` で影響範囲を分析
+- [ ] \`pnpm typecheck\` で型エラーがないことを確認
+- [ ] \`pnpm seed:all\` でテストデータを更新
+- [ ] \`pnpm test:e2e\` でE2Eテストを実行
+- [ ] ロールバック手順を \`db/seed/999_cleanup.sql\` で確認
+
+**リスクレベル:** 🚨 HIGH - レビュー必須
+
+---
+*このコメントは自動生成されました*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
