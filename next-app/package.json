@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
+    "@ant-design/nextjs-registry": "^1.1.0",
     "@prisma/client": "^5.20.0",
     "@supabase/supabase-js": "^2.38.0",
     "@types/recharts": "^2.0.1",
