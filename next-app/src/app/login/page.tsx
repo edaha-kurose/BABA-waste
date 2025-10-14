@@ -33,7 +33,12 @@ export default function LoginPage() {
 
       if (data.user) {
         message.success('ログインしました')
-        router.push(redirectTo)
+        
+        // セッション保存を待つ
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // 強制リダイレクト（router.pushの代わり）
+        window.location.href = redirectTo
       }
     } catch (error: any) {
       message.error(`エラーが発生しました: ${error.message}`)
@@ -58,7 +63,12 @@ export default function LoginPage() {
 
       if (data.user) {
         message.success(`${email} でログインしました`)
-        router.push(redirectTo)
+        
+        // セッション保存を待つ
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // 強制リダイレクト（router.pushの代わり）
+        window.location.href = redirectTo
       }
     } catch (error: any) {
       message.error(`エラーが発生しました: ${error.message}`)
