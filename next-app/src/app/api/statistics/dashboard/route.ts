@@ -81,7 +81,6 @@ export async function GET(request: NextRequest) {
         status: {
           in: ['COMPLETED', 'VERIFIED'],
         },
-        deleted_at: null,
         ...(validatedParams.collector_id && { collector_id: validatedParams.collector_id }),
       },
       _count: true,
@@ -95,7 +94,6 @@ export async function GET(request: NextRequest) {
       where: {
         org_id: validatedParams.org_id,
         is_active: true,
-        deleted_at: null,
       },
     });
 
@@ -107,7 +105,6 @@ export async function GET(request: NextRequest) {
           gte: currentMonth,
           lt: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
         },
-        deleted_at: null,
         ...(validatedParams.collector_id && { collector_id: validatedParams.collector_id }),
       },
     });

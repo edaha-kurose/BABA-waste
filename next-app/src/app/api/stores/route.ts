@@ -18,10 +18,6 @@ export async function GET(request: NextRequest) {
       where.org_id = orgId
     }
     
-    if (!includeDeleted) {
-      where.deleted_at = null
-    }
-    
     if (isActive !== null && isActive !== undefined) {
       where.is_active = isActive === 'true'
     }
@@ -34,11 +30,11 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const stores = await prisma.store.findMany({
+    const stores = await prisma.stores.findMany({
       where,
       orderBy: { created_at: 'desc' },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
@@ -48,7 +44,7 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             plans: true,
-            collectionRequests: true,
+            collection_requests: true,
           },
         },
       },
@@ -97,11 +93,11 @@ export async function POST(request: NextRequest) {
     const validatedData = schema.parse(body)
 
     // 組織の存在確認
-    const organization = await prisma.organization.findUnique({
+    const organization = await prisma.organizations.findUnique({
       where: { id: validatedData.org_id },
     })
 
-    if (!organization || organization.deleted_at) {
+    if (!organization) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Organization not found' },
         { status: 404 }
@@ -109,11 +105,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 重複チェック（同じorg_id + store_code）
-    const existing = await prisma.store.findFirst({
+    const existing = await prisma.stores.findFirst({
       where: {
         org_id: validatedData.org_id,
         store_code: validatedData.store_code,
-        deleted_at: null,
       },
     })
 
@@ -138,10 +133,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 作成
-    const store = await prisma.store.create({
+    const store = await prisma.stores.create({
       data: storeData,
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,

@@ -11,7 +11,8 @@ const { Title, Text, Link } = Typography
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/dashboard'
+  const redirectParam = searchParams.get('redirect')
+  const redirectTo = redirectParam && redirectParam !== '/' ? redirectParam : '/dashboard'
   
   const [loading, setLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
@@ -34,12 +35,11 @@ export default function LoginPage() {
       if (data.user) {
         message.success('ログインしました')
         
-        // セッションが確実に保存されるまで待つ
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // セッションCookieが保存されるまで待機
+        await new Promise(resolve => setTimeout(resolve, 1500))
         
-        // 強制リダイレクト（window.location.replaceで確実に遷移）
-        console.log('リダイレクト先:', redirectTo)
-        window.location.replace(redirectTo)
+        // 強制リダイレクト
+        window.location.href = redirectTo
       }
     } catch (error: any) {
       message.error(`エラーが発生しました: ${error.message}`)
@@ -49,32 +49,58 @@ export default function LoginPage() {
   }
 
   const handleQuickLogin = async (email: string, password: string = 'test123') => {
+    console.log('🔵 クイックログイン開始:', email)
     setLoading(true)
     try {
       const supabase = createBrowserClient()
+      console.log('🔵 Supabaseクライアント作成完了')
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
+      console.log('🔵 ログインレスポンス:', { data, error })
 
       if (error) {
+        console.error('❌ ログインエラー:', error)
         message.error(`クイックログインに失敗しました: ${error.message}`)
         return
       }
 
-      if (data.user) {
+      if (data.user && data.session) {
+        console.log('✅ ログイン成功:', data.user.email)
+        console.log('✅ セッション取得:', data.session.access_token ? 'あり' : 'なし')
+        
+        // LocalStorageを直接確認
+        const storageKeys = Object.keys(localStorage).filter(key => key.startsWith('sb-'))
+        console.log('📦 LocalStorage keys:', storageKeys)
+        
         message.success(`${email} でログインしました`)
         
-        // セッションが確実に保存されるまで待つ
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // セッション保存を待機
+        console.log('⏳ セッション保存待機中...')
+        await new Promise(resolve => setTimeout(resolve, 2000))
         
-        // 強制リダイレクト（window.location.replaceで確実に遷移）
-        console.log('リダイレクト先:', redirectTo)
-        window.location.replace(redirectTo)
+        // 再度確認
+        const storageKeysAfter = Object.keys(localStorage).filter(key => key.startsWith('sb-'))
+        console.log('📦 LocalStorage keys (after wait):', storageKeysAfter)
+        
+        console.log('🚀 リダイレクト実行:', redirectTo)
+        console.log('🚀 現在のURL:', window.location.href)
+        
+        // 絶対URLで確実にリダイレクト
+        const targetUrl = `${window.location.origin}${redirectTo}`
+        console.log('🚀 ターゲットURL:', targetUrl)
+        
+        window.location.href = targetUrl
+      } else {
+        console.warn('⚠️ data.userまたはdata.sessionが存在しません')
       }
     } catch (error: any) {
+      console.error('❌ クイックログイン例外:', error)
       message.error(`エラーが発生しました: ${error.message}`)
     } finally {
+      console.log('🔵 クイックログイン処理終了')
       setLoading(false)
     }
   }

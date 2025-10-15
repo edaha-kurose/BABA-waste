@@ -19,7 +19,6 @@ export async function GET(request: NextRequest) {
       where.userOrgRoles = {
         some: {
           org_id: orgId,
-          deleted_at: null,
         },
       }
     }
@@ -28,7 +27,6 @@ export async function GET(request: NextRequest) {
       where.userOrgRoles = {
         some: {
           role: role,
-          deleted_at: null,
         },
       }
     }
@@ -48,12 +46,12 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const users = await prisma.user.findMany({
+    const users = await prisma.app_users.findMany({
       where,
       orderBy: { created_at: 'desc' },
       include: {
         userOrgRoles: {
-          where: { deleted_at: null },
+          where: {},
           include: {
             organization: {
               select: {
@@ -100,7 +98,7 @@ export async function POST(request: NextRequest) {
     const validatedData = schema.parse(body)
 
     // 組織の存在確認
-    const organization = await prisma.organization.findUnique({
+    const organization = await prisma.organizations.findUnique({
       where: { id: validatedData.org_id },
     })
 
@@ -112,10 +110,9 @@ export async function POST(request: NextRequest) {
     }
 
     // メールアドレス重複チェック
-    const existingUser = await prisma.user.findFirst({
+    const existingUser = await prisma.app_users.findFirst({
       where: {
         email: validatedData.email,
-        deleted_at: null,
       },
     })
 

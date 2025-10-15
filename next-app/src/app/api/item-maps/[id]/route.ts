@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const itemMap = await prisma.itemMap.findUnique({
+    const itemMap = await prisma.item_maps.findUnique({
       where: { id: params.id },
       include: {
         organization: {
@@ -61,7 +61,7 @@ export async function PATCH(
     const validatedData = schema.parse(body)
 
     // 存在チェック
-    const existing = await prisma.itemMap.findUnique({
+    const existing = await prisma.item_maps.findUnique({
       where: { id: params.id },
     })
 
@@ -74,7 +74,7 @@ export async function PATCH(
 
     // ラベル重複チェック（変更時）
     if (validatedData.item_label && validatedData.item_label !== existing.item_label) {
-      const duplicate = await prisma.itemMap.findFirst({
+      const duplicate = await prisma.item_maps.findFirst({
         where: {
           org_id: existing.org_id,
           item_label: validatedData.item_label,
@@ -92,7 +92,7 @@ export async function PATCH(
     }
 
     // 更新
-    const itemMap = await prisma.itemMap.update({
+    const itemMap = await prisma.item_maps.update({
       where: { id: params.id },
       data: validatedData,
       include: {
@@ -136,7 +136,7 @@ export async function DELETE(
     const updated_by = searchParams.get('updated_by') || undefined
 
     // 存在チェック
-    const existing = await prisma.itemMap.findUnique({
+    const existing = await prisma.item_maps.findUnique({
       where: { id: params.id },
     })
 
@@ -148,7 +148,7 @@ export async function DELETE(
     }
 
     // 論理削除
-    const itemMap = await prisma.itemMap.update({
+    const itemMap = await prisma.item_maps.update({
       where: { id: params.id },
       data: {
         deleted_at: new Date(),

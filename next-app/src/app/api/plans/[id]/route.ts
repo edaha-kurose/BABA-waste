@@ -8,17 +8,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const plan = await prisma.plan.findUnique({
+    const plan = await prisma.plans.findUnique({
       where: { id: params.id },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,
@@ -28,7 +28,6 @@ export async function GET(
           },
         },
         collectionRequests: {
-          where: { deleted_at: null },
           orderBy: { request_date: 'desc' },
           select: {
             id: true,
@@ -83,7 +82,7 @@ export async function PATCH(
     const validatedData = schema.parse(body)
 
     // 存在チェック
-    const existing = await prisma.plan.findUnique({
+    const existing = await prisma.plans.findUnique({
       where: { id: params.id },
     })
 
@@ -101,18 +100,18 @@ export async function PATCH(
     }
 
     // 更新
-    const plan = await prisma.plan.update({
+    const plan = await prisma.plans.update({
       where: { id: params.id },
       data: updateData,
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,
@@ -152,7 +151,7 @@ export async function DELETE(
     const updated_by = searchParams.get('updated_by') || undefined
 
     // 存在チェック
-    const existing = await prisma.plan.findUnique({
+    const existing = await prisma.plans.findUnique({
       where: { id: params.id },
     })
 
@@ -164,7 +163,7 @@ export async function DELETE(
     }
 
     // 論理削除
-    const plan = await prisma.plan.update({
+    const plan = await prisma.plans.update({
       where: { id: params.id },
       data: {
         deleted_at: new Date(),

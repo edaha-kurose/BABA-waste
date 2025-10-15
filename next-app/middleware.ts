@@ -9,9 +9,12 @@ const publicApiPaths = ['/api/health']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  
+  console.log('[Middleware] 🚦 Request:', pathname)
 
   // 公開APIは認証不要
   if (publicApiPaths.some((path) => pathname.startsWith(path))) {
+    console.log('[Middleware] ✅ Public API - allowing:', pathname)
     return NextResponse.next()
   }
 
@@ -21,20 +24,26 @@ export function middleware(request: NextRequest) {
   )
 
   if (!isProtectedPath) {
+    console.log('[Middleware] ✅ Not protected - allowing:', pathname)
+    return NextResponse.next()
+  }
+
+  // 開発環境またはローカル実行時は認証を完全にバイパス
+  const isLocal = request.url.includes('localhost') || request.url.includes('127.0.0.1')
+  if (process.env.NODE_ENV === 'development' || isLocal) {
+    console.log('[Middleware] 🚀 Local/Dev mode - bypassing ALL auth for:', pathname)
     return NextResponse.next()
   }
 
   // TODO: Supabase Authトークンの検証
-  // 現在は簡易的な実装（Phase 2-3で本格実装）
-  const token = request.cookies.get('sb-access-token')
+  // 本番環境用の実装（Phase 2-3で本格実装）
+  const token = request.cookies.get('sb-access-token') || 
+                request.cookies.get('sb-tnbtnezxwnumgcbhswhn-auth-token')
 
-  // 開発環境では認証をバイパス
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Middleware] Development mode - bypassing auth')
-    return NextResponse.next()
-  }
+  console.log('[Middleware] Checking auth for:', pathname, 'token:', token ? '✓' : '✗')
 
   if (!token) {
+    console.log('[Middleware] No token - redirecting to login')
     // APIリクエストの場合は401を返す
     if (pathname.startsWith('/api')) {
       return NextResponse.json(
@@ -48,6 +57,8 @@ export function middleware(request: NextRequest) {
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
+
+  console.log('[Middleware] Auth OK - allowing:', pathname)
 
   return NextResponse.next()
 }

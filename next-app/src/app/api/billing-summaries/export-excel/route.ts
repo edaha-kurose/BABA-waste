@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     });
 
     // ✅ 修正: 請求明細を取得（廃棄物マスター情報を含む）
-    const billingItems = await prisma.billingItem.findMany({
+    const billingItems = await prisma.app_billing_items.findMany({
       where: {
         org_id: validatedData.org_id,
         collector_id: validatedData.collector_id,
@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
         status: {
           not: 'CANCELLED',
         },
-        deleted_at: null,
       },
       include: {
         wasteTypeMaster: true,  // ✅ 廃棄物マスター情報を取得

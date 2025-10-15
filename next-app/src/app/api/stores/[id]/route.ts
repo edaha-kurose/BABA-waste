@@ -8,10 +8,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const store = await prisma.store.findUnique({
+    const store = await prisma.stores.findUnique({
       where: { id: params.id },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
@@ -19,7 +19,6 @@ export async function GET(
           },
         },
         plans: {
-          where: { deleted_at: null },
           orderBy: { planned_pickup_date: 'desc' },
           take: 10,
           select: {
@@ -90,7 +89,7 @@ export async function PATCH(
     const validatedData = schema.parse(body)
 
     // 存在チェック
-    const existing = await prisma.store.findUnique({
+    const existing = await prisma.stores.findUnique({
       where: { id: params.id },
     })
 
@@ -103,7 +102,7 @@ export async function PATCH(
 
     // コード重複チェック（変更時）
     if (validatedData.store_code && validatedData.store_code !== existing.store_code) {
-      const duplicate = await prisma.store.findFirst({
+      const duplicate = await prisma.stores.findFirst({
         where: {
           org_id: existing.org_id,
           store_code: validatedData.store_code,
@@ -131,11 +130,11 @@ export async function PATCH(
     }
 
     // 更新
-    const store = await prisma.store.update({
+    const store = await prisma.stores.update({
       where: { id: params.id },
       data: updateData,
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
@@ -175,7 +174,7 @@ export async function DELETE(
     const updated_by = searchParams.get('updated_by') || undefined
 
     // 存在チェック
-    const existing = await prisma.store.findUnique({
+    const existing = await prisma.stores.findUnique({
       where: { id: params.id },
     })
 
@@ -187,7 +186,7 @@ export async function DELETE(
     }
 
     // 論理削除
-    const store = await prisma.store.update({
+    const store = await prisma.stores.update({
       where: { id: params.id },
       data: {
         deleted_at: new Date(),

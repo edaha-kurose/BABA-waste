@@ -64,12 +64,11 @@ export async function GET(request: NextRequest) {
     }
 
     // 論理削除されていないレコードのみ取得
-    where.deleted_at = null;
 
-    const wasteTypeMasters = await prisma.wasteTypeMaster.findMany({
+    const wasteTypeMasters = await prisma.waste_type_masters.findMany({
       where,
       include: {
-        jwnetWasteCode: {
+        jwnet_waste_codes: {
           select: {
             id: true,
             waste_code: true,
@@ -107,7 +106,7 @@ export async function POST(request: NextRequest) {
     const validatedData = WasteTypeMasterCreateSchema.parse(body);
 
     // JWNET 廃棄物コードの存在確認
-    const jwnetWasteCode = await prisma.jwnetWasteCode.findUnique({
+    const jwnetWasteCode = await prisma.jwnet_waste_codes.findUnique({
       where: { id: validatedData.jwnet_waste_code_id },
     });
 
@@ -130,12 +129,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 重複チェック（同じ組織・収集業者・廃棄物コード）
-    const existingMaster = await prisma.wasteTypeMaster.findFirst({
+    const existingMaster = await prisma.waste_type_masters.findFirst({
       where: {
         org_id: validatedData.org_id,
         collector_id: validatedData.collector_id,
         waste_type_code: validatedData.waste_type_code,
-        deleted_at: null,
       },
     });
 
@@ -151,7 +149,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 新規作成
-    const wasteTypeMaster = await prisma.wasteTypeMaster.create({
+    const wasteTypeMaster = await prisma.waste_type_masters.create({
       data: {
         org_id: validatedData.org_id,
         collector_id: validatedData.collector_id,
@@ -169,7 +167,7 @@ export async function POST(request: NextRequest) {
         updated_by: validatedData.created_by,
       },
       include: {
-        jwnetWasteCode: {
+        jwnet_waste_codes: {
           select: {
             id: true,
             waste_code: true,

@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const periodTo = new Date(validatedData.billing_period_to);
 
     // 指定期間内の回収実績を取得（まだ請求に含まれていないもの）
-    const collections = await prisma.collection.findMany({
+    const collections = await prisma.collections.findMany({
       where: {
         org_id: validatedData.org_id,
         collector_id: validatedData.collector_id,
@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
         status: {
           in: ['COMPLETED', 'VERIFIED'], // 完了・検証済みのみ
         },
-        deleted_at: null,
         // まだ請求に含まれていないCollectionのみ
         // （billing_items との既存の紐付けがないもの）
       },
@@ -69,14 +68,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 既に請求済みのcollection_idを取得
-    const existingBillingItems = await prisma.billingItem.findMany({
+    const existingBillingItems = await prisma.app_billing_items.findMany({
       where: {
         org_id: validatedData.org_id,
         collector_id: validatedData.collector_id,
         collection_id: {
           in: collections.map((c) => c.id),
         },
-        deleted_at: null,
       },
       select: {
         collection_id: true,
@@ -117,7 +115,6 @@ export async function POST(request: NextRequest) {
           in: wasteTypeIds,
         },
         is_active: true,
-        deleted_at: null,
       },
     });
 
@@ -165,12 +162,12 @@ export async function POST(request: NextRequest) {
     });
 
     // 一括作成
-    const createdBillingItems = await prisma.billingItem.createMany({
+    const createdBillingItems = await prisma.app_billing_items.createMany({
       data: billingItemsToCreate,
     });
 
     // 作成された請求明細を取得（レスポンス用）
-    const createdItems = await prisma.billingItem.findMany({
+    const createdItems = await prisma.app_billing_items.findMany({
       where: {
         org_id: validatedData.org_id,
         collector_id: validatedData.collector_id,

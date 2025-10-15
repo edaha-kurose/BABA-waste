@@ -8,17 +8,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const collection = await prisma.collection.findUnique({
+    const collection = await prisma.collections.findUnique({
       where: { id: params.id },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,
@@ -27,7 +27,7 @@ export async function GET(
             phone: true,
           },
         },
-        collectionRequest: {
+        collection_requests: {
           select: {
             id: true,
             status: true,
@@ -91,7 +91,7 @@ export async function PATCH(
     const validatedData = schema.parse(body)
 
     // 存在チェック
-    const existing = await prisma.collection.findUnique({
+    const existing = await prisma.collections.findUnique({
       where: { id: params.id },
     })
 
@@ -112,25 +112,25 @@ export async function PATCH(
     }
 
     // 更新
-    const collection = await prisma.collection.update({
+    const collection = await prisma.collections.update({
       where: { id: params.id },
       data: updateData,
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,
             name: true,
           },
         },
-        collectionRequest: {
+        collection_requests: {
           select: {
             id: true,
             status: true,
@@ -169,7 +169,7 @@ export async function DELETE(
     const updated_by = searchParams.get('updated_by') || undefined
 
     // 存在チェック
-    const existing = await prisma.collection.findUnique({
+    const existing = await prisma.collections.findUnique({
       where: { id: params.id },
     })
 
@@ -181,7 +181,7 @@ export async function DELETE(
     }
 
     // 論理削除
-    const collection = await prisma.collection.update({
+    const collection = await prisma.collections.update({
       where: { id: params.id },
       data: {
         deleted_at: new Date(),

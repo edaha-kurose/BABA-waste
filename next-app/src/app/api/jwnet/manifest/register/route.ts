@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
         disposer_subscriber_no: body.disposer.subscriberNo,
         disposer_public_confirm_no: body.disposer.publicConfirmNo,
         is_active: true,
-        deleted_at: null,
       },
     });
 
@@ -95,7 +94,6 @@ export async function POST(request: NextRequest) {
           where: {
             jwnet_waste_code: waste.wasteCode,
             is_active: true,
-            deleted_at: null,
           },
         });
 
@@ -144,7 +142,7 @@ export async function POST(request: NextRequest) {
     }
 
     // データベースに登録情報を保存
-    await prisma.jwnetRegistration.create({
+    await prisma.registrations.create({
       data: {
         org_id: request.headers.get('x-org-id') || '',
         manifest_no: response.manifestNo!,

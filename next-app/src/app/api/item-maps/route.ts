@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const itemMaps = await prisma.itemMap.findMany({
+    const itemMaps = await prisma.item_maps.findMany({
       where,
       orderBy: { item_label: 'asc' },
       include: {
@@ -94,11 +94,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 重複チェック（同じorg_id + item_label）
-    const existing = await prisma.itemMap.findFirst({
+    const existing = await prisma.item_maps.findFirst({
       where: {
         org_id: validatedData.org_id,
         item_label: validatedData.item_label,
-        deleted_at: null,
       },
     })
 
@@ -110,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 作成
-    const itemMap = await prisma.itemMap.create({
+    const itemMap = await prisma.item_maps.create({
       data: {
         ...validatedData,
         updated_by: validatedData.created_by,

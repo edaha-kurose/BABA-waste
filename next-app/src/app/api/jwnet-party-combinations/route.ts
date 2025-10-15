@@ -80,26 +80,25 @@ export async function GET(request: NextRequest) {
     }
 
     // 論理削除されていないレコードのみ取得
-    where.deleted_at = null;
 
-    const combinations = await prisma.jwnetPartyCombination.findMany({
+    const combinations = await prisma.jwnet_party_combinations.findMany({
       where,
       include: {
-        emitter: {
+        organizations_jwnet_party_combinations_emitter_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        transporter: {
+        organizations_jwnet_party_combinations_transporter_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        disposer: {
+        organizations_jwnet_party_combinations_disposer_org_idToorganizations: {
           select: {
             id: true,
             name: true,
@@ -135,32 +134,32 @@ export async function POST(request: NextRequest) {
 
     // 組織の存在確認
     const [emitterOrg, transporterOrg, disposerOrg] = await Promise.all([
-      prisma.organization.findUnique({
+      prisma.organizations.findUnique({
         where: { id: validatedData.emitter_org_id },
       }),
-      prisma.organization.findUnique({
+      prisma.organizations.findUnique({
         where: { id: validatedData.transporter_org_id },
       }),
-      prisma.organization.findUnique({
+      prisma.organizations.findUnique({
         where: { id: validatedData.disposer_org_id },
       }),
     ]);
 
-    if (!emitterOrg || emitterOrg.deleted_at) {
+    if (!emitterOrg ) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Emitter organization not found' },
         { status: 404 }
       );
     }
 
-    if (!transporterOrg || transporterOrg.deleted_at) {
+    if (!transporterOrg ) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Transporter organization not found' },
         { status: 404 }
       );
     }
 
-    if (!disposerOrg || disposerOrg.deleted_at) {
+    if (!disposerOrg ) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Disposer organization not found' },
         { status: 404 }
@@ -168,7 +167,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 重複チェック（同じ組み合わせが既に存在しないか）
-    const existingCombination = await prisma.jwnetPartyCombination.findFirst({
+    const existingCombination = await prisma.jwnet_party_combinations.findFirst({
       where: {
         emitter_subscriber_no: validatedData.emitter_subscriber_no,
         emitter_public_confirm_no: validatedData.emitter_public_confirm_no,
@@ -176,7 +175,6 @@ export async function POST(request: NextRequest) {
         transporter_public_confirm_no: validatedData.transporter_public_confirm_no,
         disposer_subscriber_no: validatedData.disposer_subscriber_no,
         disposer_public_confirm_no: validatedData.disposer_public_confirm_no,
-        deleted_at: null,
       },
     });
 
@@ -192,7 +190,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 新規作成
-    const combination = await prisma.jwnetPartyCombination.create({
+    const combination = await prisma.jwnet_party_combinations.create({
       data: {
         org_id: validatedData.org_id,
         emitter_org_id: validatedData.emitter_org_id,
@@ -223,21 +221,21 @@ export async function POST(request: NextRequest) {
         updated_by: validatedData.created_by,
       },
       include: {
-        emitter: {
+        organizations_jwnet_party_combinations_emitter_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        transporter: {
+        organizations_jwnet_party_combinations_transporter_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        disposer: {
+        organizations_jwnet_party_combinations_disposer_org_idToorganizations: {
           select: {
             id: true,
             name: true,

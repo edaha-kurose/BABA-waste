@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
         status: {
           not: 'CANCELLED', // キャンセルされた明細は除外
         },
-        deleted_at: null,
       },
     });
 

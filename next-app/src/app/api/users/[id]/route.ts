@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.app_users.findUnique({
       where: { id: params.id },
       include: {
         userOrgRoles: {
@@ -66,7 +66,7 @@ export async function PATCH(
     const validatedData = schema.parse(body)
 
     // 存在チェック
-    const existing = await prisma.user.findUnique({
+    const existing = await prisma.app_users.findUnique({
       where: { id: params.id },
     })
 
@@ -79,7 +79,7 @@ export async function PATCH(
 
     // メールアドレス重複チェック（変更時）
     if (validatedData.email && validatedData.email !== existing.email) {
-      const duplicate = await prisma.user.findFirst({
+      const duplicate = await prisma.app_users.findFirst({
         where: {
           email: validatedData.email,
           deleted_at: null,
@@ -131,7 +131,6 @@ export async function PATCH(
         where: { id: params.id },
         include: {
           userOrgRoles: {
-            where: { deleted_at: null },
             include: {
               organization: {
                 select: {
@@ -176,7 +175,7 @@ export async function DELETE(
     const updated_by = searchParams.get('updated_by') || undefined
 
     // 存在チェック
-    const existing = await prisma.user.findUnique({
+    const existing = await prisma.app_users.findUnique({
       where: { id: params.id },
     })
 

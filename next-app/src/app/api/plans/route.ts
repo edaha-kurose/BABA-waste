@@ -28,32 +28,28 @@ export async function GET(request: NextRequest) {
       where.status = status
     }
     
-    if (!includeDeleted) {
-      where.deleted_at = null
-    }
-    
     if (fromDate || toDate) {
-      where.planned_pickup_date = {}
+      where.planned_date = {}
       if (fromDate) {
-        where.planned_pickup_date.gte = new Date(fromDate)
+        where.planned_date.gte = new Date(fromDate)
       }
       if (toDate) {
-        where.planned_pickup_date.lte = new Date(toDate)
+        where.planned_date.lte = new Date(toDate)
       }
     }
 
-    const plans = await prisma.plan.findMany({
+    const plans = await prisma.plans.findMany({
       where,
-      orderBy: { planned_pickup_date: 'asc' },
+      orderBy: { planned_date: 'asc' },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,
@@ -63,7 +59,7 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            collectionRequests: true,
+            reservations: true,
           },
         },
       },
@@ -75,8 +71,13 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[API] Failed to fetch plans:', error)
+    const isLocal = request.url.includes('localhost') || request.url.includes('127.0.0.1')
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to fetch plans' },
+      { 
+        error: 'Internal Server Error', 
+        message: 'Failed to fetch plans',
+        details: isLocal ? (error instanceof Error ? error.message : String(error)) : undefined,
+      },
       { status: 500 }
     )
   }
@@ -130,21 +131,21 @@ export async function POST(request: NextRequest) {
     }
 
     // 作成
-    const plan = await prisma.plan.create({
+    const plan = await prisma.plans.create({
       data: {
         ...validatedData,
         planned_pickup_date: new Date(validatedData.planned_pickup_date),
         updated_by: validatedData.created_by,
       },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,

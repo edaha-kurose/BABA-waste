@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (response.reservationNos && response.reservationNos.length > 0) {
       await Promise.all(
         response.reservationNos.map((reservationNo) =>
-          prisma.jwnetReservation.create({
+          prisma.reservations.create({
             data: {
               org_id: orgId,
               reservation_no: reservationNo,

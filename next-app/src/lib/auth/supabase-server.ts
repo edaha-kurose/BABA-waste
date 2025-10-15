@@ -17,6 +17,9 @@ export async function createServerClient() {
       auth: {
         persistSession: false,
       },
+      db: {
+        schema: 'app', // appスキーマを使用
+      },
       global: {
         headers: {
           cookie: cookieStore.toString(),
@@ -39,6 +42,9 @@ export function createServiceRoleClient() {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
+      },
+      db: {
+        schema: 'app', // appスキーマを使用
       },
     }
   )

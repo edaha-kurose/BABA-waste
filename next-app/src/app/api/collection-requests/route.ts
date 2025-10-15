@@ -33,9 +33,6 @@ export async function GET(request: NextRequest) {
       where.status = status
     }
     
-    if (!includeDeleted) {
-      where.deleted_at = null
-    }
     
     if (fromDate || toDate) {
       where.request_date = {}
@@ -47,18 +44,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const requests = await prisma.collectionRequest.findMany({
+    const requests = await prisma.collection_requests.findMany({
       where,
-      orderBy: { request_date: 'desc' },
+      orderBy: { requested_at: 'desc' },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,
@@ -66,22 +63,11 @@ export async function GET(request: NextRequest) {
             address: true,
           },
         },
-        plan: {
-          select: {
-            id: true,
-            item_name: true,
-            planned_quantity: true,
-            unit: true,
-            planned_pickup_date: true,
-          },
-        },
         collections: {
-          where: { deleted_at: null },
           select: {
             id: true,
-            status: true,
-            actual_pickup_date: true,
-            actual_quantity: true,
+            actual_qty: true,
+            collected_at: true,
           },
         },
       },
@@ -93,8 +79,13 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[API] Failed to fetch collection requests:', error)
+    const isLocal = request.url.includes('localhost') || request.url.includes('127.0.0.1')
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to fetch collection requests' },
+      { 
+        error: 'Internal Server Error', 
+        message: 'Failed to fetch collection requests',
+        details: isLocal ? (error instanceof Error ? error.message : String(error)) : undefined,
+      },
       { status: 500 }
     )
   }
@@ -125,11 +116,11 @@ export async function POST(request: NextRequest) {
     const validatedData = schema.parse(body)
 
     // 組織の存在確認
-    const organization = await prisma.organization.findUnique({
+    const organization = await prisma.organizations.findUnique({
       where: { id: validatedData.org_id },
     })
 
-    if (!organization || organization.deleted_at) {
+    if (!organization ) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Organization not found' },
         { status: 404 }
@@ -137,11 +128,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 店舗の存在確認
-    const store = await prisma.store.findUnique({
+    const store = await prisma.stores.findUnique({
       where: { id: validatedData.store_id },
     })
 
-    if (!store || store.deleted_at || store.org_id !== validatedData.org_id) {
+    if (!store  || store.org_id !== validatedData.org_id) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Store not found or does not belong to this organization' },
         { status: 404 }
@@ -153,7 +144,7 @@ export async function POST(request: NextRequest) {
       where: { id: validatedData.plan_id },
     })
 
-    if (!plan || plan.deleted_at || plan.org_id !== validatedData.org_id) {
+    if (!plan  || plan.org_id !== validatedData.org_id) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Plan not found or does not belong to this organization' },
         { status: 404 }
@@ -173,17 +164,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 作成
-    const collectionRequest = await prisma.collectionRequest.create({
+    const collectionRequest = await prisma.collection_requests.create({
       data: requestData,
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,

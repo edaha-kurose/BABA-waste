@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const orgId = request.headers.get('x-org-id') || '';
     
     if (response.manifestNo) {
-      await prisma.jwnetRegistration.updateMany({
+      await prisma.registrations.updateMany({
         where: {
           org_id: orgId,
           manifest_no: response.manifestNo,

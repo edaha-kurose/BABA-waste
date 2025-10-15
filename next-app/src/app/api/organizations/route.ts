@@ -8,8 +8,12 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const includeDeleted = searchParams.get('includeDeleted') === 'true'
 
-    const organizations = await prisma.organization.findMany({
-      where: includeDeleted ? {} : { deleted_at: null },
+    const organizations = await prisma.organizations.findMany({
+      where: {
+        code: {
+          not: null,
+        },
+      },
       orderBy: { created_at: 'desc' },
       select: {
         id: true,
@@ -17,11 +21,10 @@ export async function GET(request: NextRequest) {
         code: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         _count: {
           select: {
             stores: true,
-            userOrgRoles: true,
+            user_org_roles: true,
           },
         },
       },
@@ -33,8 +36,13 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[API] Failed to fetch organizations:', error)
+    const isLocal = request.url.includes('localhost') || request.url.includes('127.0.0.1')
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to fetch organizations' },
+      { 
+        error: 'Internal Server Error', 
+        message: 'Failed to fetch organizations',
+        details: isLocal ? (error instanceof Error ? error.message : String(error)) : undefined,
+      },
       { status: 500 }
     )
   }

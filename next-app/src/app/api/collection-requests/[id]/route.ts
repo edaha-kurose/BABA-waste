@@ -8,17 +8,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const collectionRequest = await prisma.collectionRequest.findUnique({
+    const collectionRequest = await prisma.collection_requests.findUnique({
       where: { id: params.id },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,
@@ -37,8 +37,7 @@ export async function GET(
           },
         },
         collections: {
-          where: { deleted_at: null },
-          orderBy: { actual_pickup_date: 'desc' },
+          orderBy: { collected_at: 'desc' },
           select: {
             id: true,
             status: true,
@@ -52,7 +51,7 @@ export async function GET(
       },
     })
 
-    if (!collectionRequest || collectionRequest.deleted_at) {
+    if (!collectionRequest ) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Collection request not found' },
         { status: 404 }
@@ -94,11 +93,11 @@ export async function PATCH(
     const validatedData = schema.parse(body)
 
     // 存在チェック
-    const existing = await prisma.collectionRequest.findUnique({
+    const existing = await prisma.collection_requests.findUnique({
       where: { id: params.id },
     })
 
-    if (!existing || existing.deleted_at) {
+    if (!existing ) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Collection request not found' },
         { status: 404 }
@@ -120,18 +119,18 @@ export async function PATCH(
     }
 
     // 更新
-    const collectionRequest = await prisma.collectionRequest.update({
+    const collectionRequest = await prisma.collection_requests.update({
       where: { id: params.id },
       data: updateData,
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        store: {
+        stores: {
           select: {
             id: true,
             store_code: true,
@@ -177,11 +176,11 @@ export async function DELETE(
     const updated_by = searchParams.get('updated_by') || undefined
 
     // 存在チェック
-    const existing = await prisma.collectionRequest.findUnique({
+    const existing = await prisma.collection_requests.findUnique({
       where: { id: params.id },
     })
 
-    if (!existing || existing.deleted_at) {
+    if (!existing ) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Collection request not found' },
         { status: 404 }
@@ -189,7 +188,7 @@ export async function DELETE(
     }
 
     // 論理削除
-    const collectionRequest = await prisma.collectionRequest.update({
+    const collectionRequest = await prisma.collection_requests.update({
       where: { id: params.id },
       data: {
         deleted_at: new Date(),

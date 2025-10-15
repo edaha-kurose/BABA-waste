@@ -12,7 +12,6 @@ export async function GET(
       where: { id: params.id },
       include: {
         stores: {
-          where: { deleted_at: null },
           select: {
             id: true,
             store_code: true,
@@ -30,7 +29,7 @@ export async function GET(
       },
     })
 
-    if (!organization || organization.deleted_at) {
+    if (!organization) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Organization not found' },
         { status: 404 }
@@ -69,7 +68,7 @@ export async function PATCH(
       where: { id: params.id },
     })
 
-    if (!existing || existing.deleted_at) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Organization not found' },
         { status: 404 }
@@ -130,20 +129,16 @@ export async function DELETE(
       where: { id: params.id },
     })
 
-    if (!existing || existing.deleted_at) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Organization not found' },
         { status: 404 }
       )
     }
 
-    // 論理削除
-    const organization = await prisma.organization.update({
+    // 物理削除（deleted_atカラムが存在しないため）
+    const organization = await prisma.organization.delete({
       where: { id: params.id },
-      data: {
-        deleted_at: new Date(),
-        updated_by,
-      },
     })
 
     return NextResponse.json({
