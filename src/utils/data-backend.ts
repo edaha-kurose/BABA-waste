@@ -16,7 +16,7 @@ import { JwnetReservationRepository as JwnetResRepo } from '@/modules/jwnet-rese
 import { PlanRepository as PlanRepo } from '@/modules/plans/repository'
 import { ItemMapRepository as ItemMapRepo } from '@/modules/item-maps/repository'
 import { CollectionRepository as CollectionRepo } from '@/modules/collections/repository'
-import { OrganizationRepository as OrgRepo } from '@/modules/organizations/repository'
+import { organizationRepository as OrgRepo } from '@/modules/organizations/repository'
 import { ImportHistoryRepository as ImportHistoryRepo } from '@/modules/import-histories/repository'
 import { ManagedStoreRepository as ManagedStoreRepo } from '@/modules/managed-stores/repository'
 import { DisposalSiteRepository as DisposalSiteRepo } from '@/modules/disposal-sites/repository'

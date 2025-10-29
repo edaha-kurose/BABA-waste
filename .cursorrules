@@ -1,0 +1,203 @@
+# Cursor AI Rules (Essential Only)
+
+## 🚨 最優先ルール
+
+### 1. コスト最適化
+- 簡潔な応答（200〜400文字）
+- コード例は5〜10行まで
+- 絵文字は1〜2個まで
+
+### 2. 実装前の必須確認
+```bash
+pnpm check:schema-sync    # schema.prisma と DB の同期確認
+pnpm check:foreign-keys   # 外部キー制約の確認
+```
+
+**1つでも不明なら実装前にASK**:
+- [ ] テーブル/列/ENUM は確定しているか？
+- [ ] schema.prisma と DB は同期しているか？
+- [ ] 外部キー制約は適切か？
+
+---
+
+## 🗄️ Prisma 絶対ルール
+
+### A. スキーマ同期（CRITICAL）
+```bash
+# 実装前に必ず実行
+pnpm check:schema-sync
+
+# schema.prisma 編集後
+pnpm prisma migrate dev --name descriptive_name
+pnpm prisma:generate
+```
+
+### B. 外部キー制約（CRITICAL）
+```prisma
+// ✅ 正しい例
+model child_table {
+  id        String @id
+  parent_id String @db.Uuid
+  parent    parent_table @relation(fields: [parent_id], references: [id], onDelete: Cascade)
+  @@index([parent_id])
+}
+```
+
+**禁止**: 外部キー制約なしの `*_id` カラム
+
+### C. マイグレーション戦略
+- **標準**: Prisma Migrate のみ使用
+- **禁止**: 手動SQLでのテーブル作成
+- **例外**: RLSポリシー、ストアドプロシージャ、大量データ移行のみ
+
+---
+
+## 🔒 認証・認可（API層）
+
+### 必須パターン
+```typescript
+import { getAuthenticatedUser } from '@/lib/auth/session-server'
+
+export async function GET(request: NextRequest) {
+  // 1. 認証チェック
+  const authUser = await getAuthenticatedUser(request)
+  if (!authUser) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // 2. 認可チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(targetOrgId)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // 3. Zodバリデーション
+  const parsed = QuerySchema.parse(...)
+
+  // 4. Prismaエラー分離
+  try {
+    const data = await prisma.table.findMany(...)
+  } catch (dbError) {
+    console.error('[API] Database error:', dbError)
+    return NextResponse.json({ error: 'Database error' }, { status: 500 })
+  }
+}
+```
+
+---
+
+## 📋 エラーハンドリング標準
+
+### JSONパースエラー
+```typescript
+let body
+try {
+  body = await request.json()
+} catch (parseError) {
+  return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+}
+```
+
+### Zodバリデーションエラー
+```typescript
+try {
+  const validated = Schema.parse(body)
+} catch (error) {
+  if (error instanceof z.ZodError) {
+    return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+  }
+}
+```
+
+### Prismaエラー分離
+```typescript
+try {
+  await prisma.table.create(...)
+} catch (dbError) {
+  console.error('[API] Database error:', dbError)
+  return NextResponse.json({ error: 'Database error occurred' }, { status: 500 })
+}
+```
+
+---
+
+## 🚫 絶対禁止事項
+
+### データベース操作
+- ❌ 手動SQLでのテーブル作成（Prisma Migrate を使用）
+- ❌ 外部キー制約なしの `*_id` カラム
+- ❌ `ON DELETE`/`ON UPDATE` の未指定
+- ❌ schema.prisma と DB の不一致
+
+### API実装
+- ❌ 認証チェックなしのAPI
+- ❌ 認可チェックなしの組織データアクセス
+- ❌ Zodバリデーションなしのリクエスト処理
+- ❌ Prismaエラーの未分離（500エラーの詳細露出）
+
+### コード品質
+- ❌ `any` 型の乱用
+- ❌ エラーハンドリングの省略
+- ❌ トランザクションなしの複数テーブル更新
+
+---
+
+## 🧪 E2Eテスト必須ルール
+
+### A. 認証処理（CRITICAL）
+```typescript
+// ✅ 必須: 統一されたE2Eバイパスログインを使用
+import { e2eBypassLogin } from '../helpers/auth-helper'
+
+test.beforeEach(async ({ page }) => {
+  await e2eBypassLogin(page)
+})
+
+// ❌ 禁止: 直接ログインボタンをクリック
+// ❌ 禁止: createServerClient() の直接使用（E2Eバイパス非対応）
+```
+
+### B. 非同期処理の待機（CRITICAL）
+```typescript
+// ✅ 必須: 適切な待機処理
+await page.waitForLoadState('networkidle', { timeout: 10000 })
+await page.locator('.ant-spin-spinning').waitFor({ state: 'hidden' }).catch(() => {})
+await page.locator('.ant-layout-sider').waitFor({ state: 'visible' })
+
+// ❌ 禁止: waitForTimeout のみに依存
+// ❌ 禁止: 待機なしでアサーション実行
+```
+
+### C. UIセレクタの堅牢性（IMPORTANT）
+```typescript
+// ✅ 推奨: data-testid 属性を使用
+<button data-testid="submit-button">送信</button>
+page.locator('[data-testid="submit-button"]')
+
+// ❌ 禁止: nth-child などの位置依存セレクタ
+```
+
+### D. データ依存テストの処理（IMPORTANT）
+```typescript
+// ✅ 必須: データ存在チェック
+const rowCount = await page.locator('tbody tr').count()
+if (rowCount === 0) {
+  console.log('⏭️ データがないためスキップ')
+  test.skip()
+}
+```
+
+---
+
+## 📚 詳細ドキュメント参照
+
+実装時に以下を参照:
+- `.cursor/rules/global-rules.md` - 全820行の詳細ルール
+- `.cursor/rules/e2e-testing-guidelines.md` - E2Eテスト完全ガイド（NEW）
+- `docs/guardrails/SCHEMA_CHANGE_GUIDELINES.md` - スキーマ変更時
+- `docs/guardrails/INFRASTRUCTURE_SETUP_CHECKLIST.md` - インフラ設定時
+- `docs/guardrails/CURSOR_COMMON_SETTINGS_v3.3_BFF.md` - BFF実装時
+
+---
+
+**最終更新**: 2025-10-22
+**バージョン**: 1.1 (Essential + E2E)

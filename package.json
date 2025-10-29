@@ -14,6 +14,8 @@
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "check:structure": "node scripts/check-project-structure.cjs",
+    "preflight": "npm run check:structure && npm run typecheck",
     "schema:impact": "node scripts/analyze-schema-impact.mjs",
     "seed:reset": "psql $DATABASE_URL -f db/seed/999_cleanup.sql",
     "seed:orgs": "psql $DATABASE_URL -f db/seed/001_organizations.sql",

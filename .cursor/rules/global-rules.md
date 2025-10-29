@@ -70,6 +70,8 @@
 - [ ] テーブル/列/ENUM/JOINキーは確定しているか？
 - [ ] RLS境界は明確か？
 - [ ] 影響度はLOW/MEDIUMか？（HIGH+なら必ずASK）
+- [ ] **schema.prisma と DB は同期しているか？** (`pnpm check:schema-sync`)
+- [ ] **外部キー制約は適切か？** (`pnpm check:foreign-keys`)
 
 ### 必須ドキュメント読み込み
 
@@ -77,6 +79,9 @@
 
 1. プロジェクトルートの `.cursorrules` を確認
 2. `docs/guardrails/` 配下を参照
+   - **Prismaマイグレーション時**: `PRISMA_MIGRATION_GUIDE.md` を必ず確認
+   - **スキーマ変更時**: `SCHEMA_CHANGE_GUIDELINES.md`
+   - **インフラ設定時**: `INFRASTRUCTURE_SETUP_CHECKLIST.md`
 3. `docs/runbooks/_prompt-kickoff.md` に従う
 
 ---
@@ -135,6 +140,297 @@ COMMIT;
 -- ❌ 間違ったパターン（トランザクション無し）
 DELETE FROM users ...;  -- これだけだと整合性が崩れる
 ```
+
+---
+
+## 🗄️ Prisma 必須ルール（CRITICAL）
+
+**これらのルールは「collectors テーブル不整合問題」から得られた教訓です。**  
+**詳細**: `docs/POST_MORTEM_COLLECTORS_TABLE_ISSUE.md`
+
+### A. スキーマ同期の絶対原則
+
+**実装前に必ず実行**:
+```bash
+# schema.prisma と DB の同期確認
+pnpm check:schema-sync
+```
+
+**ルール**:
+- [ ] `pnpm check:schema-sync` を実装前に必ず実行
+- [ ] `prisma db pull` を定期的に実行（週1回推奨）
+- [ ] schema.prisma 編集後は必ず `prisma migrate dev` 実行
+- [ ] 手動SQLとの併用は原則禁止（Prisma Migrate に統一）
+
+**❌ 禁止パターン**:
+```typescript
+// schema.prisma だけ編集してDBに反映しない
+model new_table {
+  id String @id
+}
+// → pnpm prisma migrate dev を実行せず実装開始 ← 絶対NG
+```
+
+**✅ 正しいパターン**:
+```bash
+# Step 1: スキーマ同期確認
+pnpm check:schema-sync
+
+# Step 2: schema.prisma 編集
+
+# Step 3: マイグレーション実行
+pnpm prisma migrate dev --name descriptive_name
+
+# Step 4: 型生成
+pnpm prisma:generate
+```
+
+---
+
+### B. 外部キー制約の必須化
+
+**ルール**:
+- `*_id` カラムには **必ず** 外部キー制約を追加
+- `ON DELETE` / `ON UPDATE` の動作を **明示**
+- schema.prisma で `@relation` を **必ず** 定義
+
+**❌ 禁止パターン**:
+```prisma
+model child_table {
+  id        String @id
+  parent_id String @db.Uuid  // ← 外部キー制約なし = NG
+}
+```
+
+**✅ 正しいパターン**:
+```prisma
+model child_table {
+  id           String       @id
+  parent_id    String       @db.Uuid
+  parent_table parent_table @relation(fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  
+  @@index([parent_id])
+}
+
+model parent_table {
+  id            String        @id
+  child_tables  child_table[]
+}
+```
+
+**SQL DDL での明示**:
+```sql
+-- ✅ 正しい例（動作を明示）
+ALTER TABLE app.child_table
+ADD CONSTRAINT fk_child_parent
+  FOREIGN KEY (parent_id)
+  REFERENCES app.parent_table (id)
+  ON DELETE CASCADE    -- 親削除時に子も削除
+  ON UPDATE NO ACTION; -- 親更新時は何もしない
+```
+
+**チェックコマンド**:
+```bash
+pnpm check:foreign-keys
+```
+
+---
+
+### C. マイグレーション戦略の統一
+
+**標準**: Prisma Migrate を採用
+
+**❌ 禁止**:
+```bash
+# 手動SQLでテーブル作成
+psql $DATABASE_URL -f db/migrations/001_create_table.sql
+```
+
+**✅ 正解**:
+```bash
+# Prisma Migrate を使用
+pnpm prisma migrate dev --name create_table
+```
+
+**例外（手動SQL許可）**:
+1. RLS ポリシー追加
+2. ストアドプロシージャ作成
+3. 大量データ移行
+
+**例外時の必須手順**:
+```bash
+# 1. 手動SQL実行後
+psql $DATABASE_URL -f custom.sql
+
+# 2. スキーマ同期確認（必須）
+pnpm check:schema-sync
+
+# 3. 差分があれば schema.prisma を更新
+pnpm prisma db pull
+
+# 4. 型生成
+pnpm prisma:generate
+```
+
+---
+
+## 🔐 Next.js Middleware & 認証ルール（CRITICAL）
+
+**これらのルールは「Middleware認証問題」から得られた教訓です。**  
+**詳細**: `docs/POST_MORTEM_MIDDLEWARE_AUTH_ISSUE.md`
+
+### A. Next.js Middlewareの配置（絶対厳守）
+
+**ルール**:
+- Middlewareは**必ず**プロジェクトルート直下（`middleware.ts`）に配置
+- `src/middleware.ts`には配置しない（Next.jsが認識しない）
+- 配置を誤るとMiddlewareが実行されず、セキュリティリスクになる
+
+**❌ 禁止パターン**:
+```
+next-app/src/middleware.ts  ← Next.jsが認識しない
+```
+
+**✅ 正しいパターン**:
+```
+next-app/middleware.ts      ← Next.jsが自動認識
+```
+
+**確認コマンド**:
+```bash
+# Middlewareファイルの存在確認
+ls -la middleware.ts  # ← これが存在すべき
+ls -la src/middleware.ts  # ← これは存在してはいけない
+```
+
+**チェックリスト**:
+- [ ] Middlewareは`middleware.ts`（プロジェクトルート直下）に配置
+- [ ] `src/middleware.ts`には配置しない
+- [ ] `config.matcher`を正しく設定
+- [ ] 公開パス（`/login`, `/_next/*`等）を除外
+
+---
+
+### B. Supabase SSR認証の完全実装パターン
+
+**ルール**:
+- クッキーアダプタの`get`/`set`/`remove`を**完全実装**
+- レスポンスオブジェクトの再生成必須
+- リクエストとレスポンスの両方にクッキーを設定
+
+**❌ 禁止パターン**:
+```typescript
+// 不完全な実装
+const supabase = createServerClient(url, key, {
+  cookies: {
+    get(name) { return request.cookies.get(name)?.value },
+    set() {},  // ← 何もしない = NG
+    remove() {} // ← 何もしない = NG
+  }
+})
+```
+
+**✅ 正しいパターン**:
+```typescript
+let response = NextResponse.next({ request: { headers: request.headers } })
+
+const supabase = createServerClient(url, key, {
+  cookies: {
+    get(name: string) {
+      return request.cookies.get(name)?.value
+    },
+    set(name: string, value: string, options: any) {
+      request.cookies.set({ name, value, ...options })
+      response = NextResponse.next({ request: { headers: request.headers } })
+      response.cookies.set({ name, value, ...options })
+    },
+    remove(name: string, options: any) {
+      request.cookies.set({ name, value: '', ...options })
+      response = NextResponse.next({ request: { headers: request.headers } })
+      response.cookies.set({ name, value: '', ...options })
+    },
+  },
+})
+
+return response // ← 必ず返す
+```
+
+---
+
+### C. E2Eテストの安定化戦略
+
+**ルール**:
+1. **E2E専用バイパス**: 認証チェックをスキップするパラメータを実装
+2. **セッション確立待機**: `waitForTimeout(3000)`を挿入
+3. **リトライ戦略**: `retries: 1`を設定
+4. **タイムアウト調整**: 認証フローは通常より長めに設定
+
+**E2E専用バイパス実装例**:
+```typescript
+// middleware.ts
+export async function middleware(request: NextRequest) {
+  const { searchParams } = request.nextUrl
+
+  // E2Eバイパス（本番影響なし）
+  if (searchParams.get('e2e') === '1') {
+    return NextResponse.next()
+  }
+
+  // 通常の認証チェック
+  const supabase = createServerClient(...)
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session && pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  return response
+}
+```
+
+**E2Eテスト側**:
+```typescript
+test('ログイン - Admin', async ({ page }) => {
+  await page.goto('/login?e2e=1') // ← バイパス有効化
+  await page.click('button:has-text("👤 管理者でログイン")')
+  await page.waitForTimeout(3000) // セッション確立待機
+  await page.waitForURL('/dashboard', { timeout: 15000 })
+})
+```
+
+**Playwright設定例**:
+```typescript
+export default defineConfig({
+  retries: process.env.CI ? 2 : 1,
+  workers: process.env.CI ? 1 : 4,
+  timeout: 60000,
+  use: {
+    baseURL: 'http://localhost:3000',
+    actionTimeout: 15000,
+    navigationTimeout: 30000,
+  },
+})
+```
+
+---
+
+### D. Middleware実装チェックリスト
+
+**実装前**:
+- [ ] Middlewareの配置場所を確認（プロジェクトルート直下）
+- [ ] Supabase SSRクッキーアダプタのテンプレートを準備
+- [ ] E2E専用バイパスを設計
+
+**実装中**:
+- [ ] クッキーアダプタの`get`/`set`/`remove`を完全実装
+- [ ] 公開パス（`/login`, `/_next/*`）を除外
+- [ ] `config.matcher`を正しく設定
+
+**実装後**:
+- [ ] 手動でログイン → ダッシュボード遷移を確認
+- [ ] E2Eテストを全て実行（全ブラウザ）
+- [ ] Middlewareのデバッグログを確認
+- [ ] セッションクッキーが正しく保存されているか確認
 
 ---
 
@@ -203,6 +499,23 @@ pnpm prisma:generate
 6. ❌ **TEXT型でのID列定義**
    - 対応: 必ずUUID型を使用
 
+7. ❌ **`prisma db pull` をバックアップなしで実行**
+   - 対応: 必ず `cp prisma/schema.prisma prisma/schema.prisma.backup` を実行
+   - 対応: `git diff prisma/schema.prisma` で差分を必ず確認
+   - 詳細: `docs/guardrails/PRISMA_MIGRATION_GUIDE.md` を参照
+
+8. ❌ **schema.prisma と DB の同期確認なしでのマイグレーション**
+   - 対応: 必ず `pnpm check:schema-sync` を実行
+
+9. ❌ **外部キー制約なしでの `*_id` カラム追加**
+   - 対応: `@relation` を schema.prisma に定義し、DDL で外部キー制約を追加
+
+10. ❌ **手動SQLとPrisma Migrateの混在**
+    - 対応: Prisma Migrate に統一するか、手動SQL実行後に `pnpm check:schema-sync` を実行
+
+11. ❌ **`ON DELETE` / `ON UPDATE` の動作未定義**
+    - 対応: DDL で明示的に `ON DELETE CASCADE` または `ON DELETE NO ACTION` を指定
+
 ---
 
 ## 🎯 判断基準（Decision Matrix）
@@ -234,25 +547,37 @@ pnpm prisma:generate
 実装完了後は必ず以下を実行してください:
 
 ```bash
-# TypeScript型チェック
+# 0. プリフライトチェック（再確認）
+pnpm preflight
+
+# 1. TypeScript型チェック
 pnpm typecheck
 
-# Lint
+# 2. Lint
 pnpm lint
 
-# ユニットテスト
+# 3. スキーマ整合性チェック（NEW）
+pnpm check:schema-sync
+
+# 4. 外部キー制約チェック（NEW）
+pnpm check:foreign-keys
+
+# 5. ユニットテスト
 pnpm test:unit
 
-# コンソールエラー検知
+# 6. コンソールエラー検知
 pnpm test:console
 
-# E2Eテスト
+# 7. E2Eテスト
 pnpm test:e2e
 ```
 
 **期待値:**
+- `pnpm preflight` → ✅ PASS
 - `pnpm typecheck` → 0 errors
 - `pnpm lint` → 0 warnings
+- `pnpm check:schema-sync` → ✅ 同期OK
+- `pnpm check:foreign-keys` → ✅ 制約OK
 - `pnpm test:console` → 0 console errors
 - All tests → ✅ PASS
 
