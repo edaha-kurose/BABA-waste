@@ -6,10 +6,13 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, Alert, Typography } from 'antd';
-import { DollarOutlined, ShopOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Spin, Alert, Typography, Button } from 'antd';
+import { DollarOutlined, ShopOutlined, FileTextOutlined, CheckCircleOutlined, WarningOutlined } from '@ant-design/icons';
+import { useRouter } from 'next/navigation';
+import { useSelectedTenant } from '@/components/TenantSelector';
+import { useUser } from '@/lib/auth/session';
 
-const { Text } = Typography;
+const { Text, Link } = Typography;
 
 interface DashboardStats {
   totalBillingAmount: number;
@@ -17,45 +20,88 @@ interface DashboardStats {
   pendingCollectionsCount: number;
   completedCollectionsCount: number;
   currentMonth: string;
+  collectorsCount: number;
+  itemMapsCount: number;
+  matrixCount: number;
+  billingItemsCount: number;
+  jwnetConfigured: boolean;
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { user } = useUser();
+  const selectedTenantId = useSelectedTenant();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const fetchStats = async () => {
       try {
         setLoading(true);
         setError(null);
 
         console.log('[Dashboard] 統計データ取得開始...');
-        const response = await fetch('/api/dashboard/stats');
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'データの取得に失敗しました');
-        }
+        const response = await fetch('/api/dashboard/stats', {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          signal: abortController.signal, // キャンセル可能にする
+        });
 
         const data = await response.json();
-        console.log('[Dashboard] 統計データ取得成功:', data);
-        setStats(data);
+
+        if (!response.ok) {
+          console.error('[Dashboard] APIエラー:', {
+            status: response.status,
+            error: data.error,
+            message: data.message,
+            details: data.details,
+          });
+          throw new Error(data.details || data.message || 'データの取得に失敗しました');
+        }
+
+        if (isMounted) {
+          console.log('[Dashboard] 統計データ取得成功:', data);
+          setStats(data);
+        }
       } catch (err) {
+        // AbortError は無視（意図的なキャンセル）
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.log('[Dashboard] リクエストがキャンセルされました（正常）');
+          return;
+        }
+        
         console.error('[Dashboard] 統計データ取得エラー:', err);
-        setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchStats();
+
+    // クリーンアップ: リクエストをキャンセル
+    return () => {
+      abortController.abort();
+      isMounted = false;
+    };
   }, []);
 
   if (loading) {
     return (
       <div style={{ padding: '24px', textAlign: 'center' }}>
-        <Spin size="large" tip="統計データを読み込み中..." />
+        <Spin size="large" spinning tip="統計データを読み込み中...">
+          <div style={{ padding: 50 }} />
+        </Spin>
       </div>
     );
   }
@@ -71,6 +117,26 @@ export default function DashboardPage() {
         />
       </div>
     );
+  }
+
+  // 初期設定の完了状況をチェック
+  const isSetupIncomplete = stats && (
+    stats.managedStoresCount === 0 ||
+    stats.collectorsCount === 0 ||
+    stats.itemMapsCount === 0 ||
+    stats.matrixCount === 0 ||
+    stats.billingItemsCount === 0 ||
+    !stats.jwnetConfigured
+  );
+
+  const missingSetupItems: string[] = [];
+  if (stats) {
+    if (stats.managedStoresCount === 0) missingSetupItems.push('店舗マスター');
+    if (stats.collectorsCount === 0) missingSetupItems.push('収集業者マスター');
+    if (stats.itemMapsCount === 0) missingSetupItems.push('廃棄品目リスト');
+    if (stats.matrixCount === 0) missingSetupItems.push('店舗×品目×業者マトリクス登録');
+    if (stats.billingItemsCount === 0) missingSetupItems.push('請求単価設定');
+    if (!stats.jwnetConfigured) missingSetupItems.push('JWNET設定');
   }
 
   return (
@@ -126,6 +192,34 @@ export default function DashboardPage() {
           </Card>
         </Col>
       </Row>
+
+      {/* 未完了セットアップアラート（軽量） */}
+      {missingSetupItems.length > 0 && (
+        <Alert
+          message="⚠️ セットアップが未完了です"
+          description={
+            <div>
+              <Text>以下の項目が未設定です：</Text>
+              <ul style={{ marginTop: 8, marginBottom: 12 }}>
+                {missingSetupItems.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+              <Button 
+                type="primary" 
+                icon={<CheckCircleOutlined />}
+                onClick={() => router.push('/dashboard/system-guide')}
+              >
+                システムガイドで詳細を確認
+              </Button>
+            </div>
+          }
+          type="warning"
+          showIcon
+          closable
+          style={{ marginTop: 24 }}
+        />
+      )}
 
       {/* お知らせ */}
       <Card title="システム情報" style={{ marginTop: 24 }}>

@@ -1,44 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { getAuthenticatedUser } from '@/lib/auth/session-server'
 
-// GET /api/item-maps - 品目マッピング一覧取得
+// Zodバリデーションスキーマ
+const itemMapSchema = z.object({
+  org_id: z.string().uuid(),
+  item_label: z.string().min(1, '品目ラベルは必須です'),
+  jwnet_code: z.string().min(1, 'JWNETコードは必須です'),
+  hazard: z.boolean().default(false),
+  default_unit: z.enum(['T', 'KG', 'M3']).default('T'),
+  density_t_per_m3: z.number().optional(),
+  disposal_method_code: z.string().optional(),
+  notes: z.string().optional(),
+})
+
+// GET: 品目マップ一覧取得
 export async function GET(request: NextRequest) {
+  // 認証チェック
+  const authUser = await getAuthenticatedUser(request)
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(request.url)
+  const orgIdParam = searchParams.get('org_id')
+
+  const targetOrgId = orgIdParam || authUser.org_id
+  if (!targetOrgId) {
+    return NextResponse.json({ error: '組織IDは必須です' }, { status: 400 })
+  }
+
+  // 権限チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(targetOrgId)) {
+    return NextResponse.json(
+      { error: 'この組織の品目マップを閲覧する権限がありません' },
+      { status: 403 }
+    )
+  }
+
+  // データ取得
+  let itemMaps
   try {
-    const searchParams = request.nextUrl.searchParams
-    const orgId = searchParams.get('org_id')
-    const search = searchParams.get('search')
-    const hazard = searchParams.get('hazard')
-    const includeDeleted = searchParams.get('includeDeleted') === 'true'
-
-    // クエリ条件構築
-    const where: any = {}
-    
-    if (orgId) {
-      where.org_id = orgId
-    }
-    
-    if (!includeDeleted) {
-      where.deleted_at = null
-    }
-    
-    if (hazard !== null && hazard !== undefined) {
-      where.hazard = hazard === 'true'
-    }
-    
-    if (search) {
-      where.OR = [
-        { item_label: { contains: search, mode: 'insensitive' } },
-        { jwnet_code: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } },
-      ]
-    }
-
-    const itemMaps = await prisma.item_maps.findMany({
-      where,
-      orderBy: { item_label: 'asc' },
+    itemMaps = await prisma.item_maps.findMany({
+      where: {
+        org_id: targetOrgId,
+        deleted_at: null,
+      },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
@@ -46,102 +56,117 @@ export async function GET(request: NextRequest) {
           },
         },
       },
+      orderBy: {
+        created_at: 'desc',
+      },
     })
-
-    return NextResponse.json({
-      data: itemMaps,
-      count: itemMaps.length,
-    })
-  } catch (error) {
-    console.error('[API] Failed to fetch item maps:', error)
+  } catch (dbError) {
+    console.error('[GET /api/item-maps] Prisma検索エラー:', dbError)
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to fetch item maps' },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
     )
   }
+
+  return NextResponse.json(itemMaps)
 }
 
-// POST /api/item-maps - 品目マッピング作成
+// POST: 品目マップ新規作成
 export async function POST(request: NextRequest) {
+  // 認証チェック
+  const authUser = await getAuthenticatedUser(request)
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  }
+
+  // JSONパース
+  let body
   try {
-    const body = await request.json()
+    body = await request.json()
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 })
+  }
 
-    // Zodでバリデーション
-    const schema = z.object({
-      org_id: z.string().uuid('Invalid organization ID'),
-      item_label: z.string().min(1, 'Item label is required').max(255),
-      jwnet_code: z.string().max(50).optional(),
-      hazard: z.boolean().default(false),
-      default_unit: z.enum(['L', 'T', 'KG', 'M3', 'PCS']).optional(),
-      density_t_per_m3: z.number().optional(),
-      disposal_method_code: z.string().max(50).optional(),
-      notes: z.string().optional(),
-      created_by: z.string().uuid().optional(),
-    })
-
-    const validatedData = schema.parse(body)
-
-    // 組織の存在確認
-    const organization = await prisma.organization.findUnique({
-      where: { id: validatedData.org_id },
-    })
-
-    if (!organization || organization.deleted_at) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Organization not found' },
-        { status: 404 }
-      )
-    }
-
-    // 重複チェック（同じorg_id + item_label）
-    const existing = await prisma.item_maps.findFirst({
-      where: {
-        org_id: validatedData.org_id,
-        item_label: validatedData.item_label,
-      },
-    })
-
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Conflict', message: 'Item label already exists in this organization' },
-        { status: 409 }
-      )
-    }
-
-    // 作成
-    const itemMap = await prisma.item_maps.create({
-      data: {
-        ...validatedData,
-        updated_by: validatedData.created_by,
-      },
-      include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-          },
-        },
-      },
-    })
-
-    return NextResponse.json(
-      { data: itemMap, message: 'Item map created successfully' },
-      { status: 201 }
-    )
+  // バリデーション
+  let validatedData
+  try {
+    validatedData = itemMapSchema.parse(body)
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation Error', details: error.errors },
+        { error: 'バリデーションエラー', details: error.errors },
         { status: 400 }
       )
     }
+    return NextResponse.json({ error: '不正なリクエストデータです' }, { status: 400 })
+  }
 
-    console.error('[API] Failed to create item map:', error)
+  // 権限チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(validatedData.org_id)) {
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to create item map' },
+      { error: 'この組織の品目マップを作成する権限がありません' },
+      { status: 403 }
+    )
+  }
+
+  // 重複チェック
+  let existing
+  try {
+    existing = await prisma.item_maps.findFirst({
+      where: {
+        org_id: validatedData.org_id,
+        item_label: validatedData.item_label,
+        deleted_at: null,
+      },
+    })
+  } catch (dbError) {
+    console.error('[POST /api/item-maps] Prisma重複チェックエラー:', dbError)
+    return NextResponse.json(
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
     )
   }
-}
 
+  if (existing) {
+    return NextResponse.json(
+      { error: 'この品目ラベルは既に存在します' },
+      { status: 409 }
+    )
+  }
+
+  // 作成
+  let itemMap
+  try {
+    itemMap = await prisma.item_maps.create({
+      data: {
+        org_id: validatedData.org_id,
+        item_label: validatedData.item_label,
+        jwnet_code: validatedData.jwnet_code,
+        hazard: validatedData.hazard,
+        default_unit: validatedData.default_unit,
+        density_t_per_m3: validatedData.density_t_per_m3,
+        disposal_method_code: validatedData.disposal_method_code,
+        notes: validatedData.notes,
+        created_by: authUser.id,
+        updated_by: authUser.id,
+      },
+      include: {
+        organizations: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+      },
+    })
+  } catch (dbError) {
+    console.error('[POST /api/item-maps] Prisma作成エラー:', dbError)
+    return NextResponse.json(
+      { error: 'データベースエラーが発生しました' },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json(itemMap, { status: 201 })
+}

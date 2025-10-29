@@ -74,7 +74,7 @@ export default function CollectionsPage() {
       const result = await response.json()
 
       if (response.ok) {
-        setCollections(result.data)
+        setCollections(Array.isArray(result) ? result : result.data || [])
       } else {
         message.error(result.message || '収集実績データの取得に失敗しました')
       }

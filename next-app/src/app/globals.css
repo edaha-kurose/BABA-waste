@@ -3,21 +3,90 @@
 @tailwind utilities;
 
 :root {
+  /* BABA ブランドカラー */
+  --baba-primary: #2d8659;
+  --baba-secondary: #1a3d2e;
+  --baba-accent: #52c41a;
+  
   --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground: #333333;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* カスタムスクロールバー（緑系） */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2d8659 0%, #52c41a 100%);
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #1a3d2e 0%, #2d8659 100%);
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* BABA ブランドグラデーション */
+.baba-gradient {
+  background: linear-gradient(135deg, #1a3d2e 0%, #2d8659 50%, #52c41a 100%);
+}
+
+.baba-gradient-soft {
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+}
+
+/* Ant Design Menu SubMenu 統一スタイル */
+.ant-menu-dark .ant-menu-submenu-title,
+.ant-menu-dark .ant-menu-sub {
+  background-color: #1a3d2e !important;
+}
+
+.ant-menu-dark .ant-menu-submenu-title:hover {
+  background-color: #234d38 !important;
+}
+
+.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  background-color: #234d38 !important;
+}
+
+.ant-menu-dark .ant-menu-submenu-open > .ant-menu-submenu-title {
+  background-color: #234d38 !important;
+}
+
+.ant-menu-dark.ant-menu-inline .ant-menu-item,
+.ant-menu-dark.ant-menu-inline .ant-menu-submenu-title {
+  background-color: #1a3d2e !important;
 }
 
 @layer utilities {

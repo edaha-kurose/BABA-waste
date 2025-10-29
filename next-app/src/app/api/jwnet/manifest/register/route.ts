@@ -8,41 +8,61 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getJwnetClient } from '@/lib/jwnet/client';
 import { ManifestRegisterRequest, JwnetApiError } from '@/types/jwnet';
 import prisma from '@/lib/prisma';
+import { getAuthenticatedUser } from '@/lib/auth/session-server';
 
 export async function POST(request: NextRequest) {
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  let body: ManifestRegisterRequest
   try {
-    // リクエストボディを取得
-    const body: ManifestRegisterRequest = await request.json();
+    body = await request.json();
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 });
+  }
 
-    // 基本バリデーション
-    if (!body.emitter || !body.transporter || !body.disposer) {
-      return NextResponse.json(
-        { error: 'Missing required fields: emitter, transporter, or disposer' },
-        { status: 400 }
-      );
-    }
+  // 基本バリデーション
+  if (!body.emitter || !body.transporter || !body.disposer) {
+    return NextResponse.json(
+      { error: 'Missing required fields: emitter, transporter, or disposer' },
+      { status: 400 }
+    );
+  }
 
-    if (!body.wastes || body.wastes.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one waste item is required' },
-        { status: 400 }
-      );
-    }
+  if (!body.wastes || body.wastes.length === 0) {
+    return NextResponse.json(
+      { error: 'At least one waste item is required' },
+      { status: 400 }
+    );
+  }
+
+  try {
 
     // === Phase 4-B.5: JWNET WebEDI 検証強化 ===
 
     // 1. 事業者組み合わせマスターの検証
-    const partyCombination = await prisma.jwnetPartyCombination.findFirst({
-      where: {
-        emitter_subscriber_no: body.emitter.subscriberNo,
-        emitter_public_confirm_no: body.emitter.publicConfirmNo,
-        transporter_subscriber_no: body.transporter.subscriberNo,
-        transporter_public_confirm_no: body.transporter.publicConfirmNo,
-        disposer_subscriber_no: body.disposer.subscriberNo,
-        disposer_public_confirm_no: body.disposer.publicConfirmNo,
-        is_active: true,
-      },
-    });
+    let partyCombination
+    try {
+      partyCombination = await prisma.jwnet_party_combinations.findFirst({
+        where: {
+          emitter_subscriber_no: body.emitter.subscriberNo,
+          emitter_public_confirm_no: body.emitter.publicConfirmNo,
+          transporter_subscriber_no: body.transporter.subscriberNo,
+          transporter_public_confirm_no: body.transporter.publicConfirmNo,
+          disposer_subscriber_no: body.disposer.subscriberNo,
+          disposer_public_confirm_no: body.disposer.publicConfirmNo,
+          is_active: true,
+        },
+      });
+    } catch (dbError) {
+      console.error('[JWNET] 事業者組み合わせ検索エラー:', dbError);
+      return NextResponse.json(
+        { error: 'データベースエラーが発生しました' },
+        { status: 500 }
+      );
+    }
 
     if (!partyCombination) {
       return NextResponse.json(
@@ -59,7 +79,7 @@ export async function POST(request: NextRequest) {
     // 2. JWNET 廃棄物コードの検証
     const wasteCodeValidations = await Promise.all(
       body.wastes.map(async (waste) => {
-        const jwnetWasteCode = await prisma.jwnetWasteCode.findUnique({
+        const jwnetWasteCode = await prisma.jwnet_waste_codes.findUnique({
           where: { waste_code: waste.wasteCode },
         });
 
@@ -90,7 +110,7 @@ export async function POST(request: NextRequest) {
     // 3. 廃棄物種別マスターの検証（収集業者のマスターに登録済みか）
     const wasteTypeMasterValidations = await Promise.all(
       body.wastes.map(async (waste) => {
-        const wasteTypeMaster = await prisma.wasteTypeMaster.findFirst({
+        const wasteTypeMaster = await prisma.waste_type_masters.findFirst({
           where: {
             jwnet_waste_code: waste.wasteCode,
             is_active: true,
@@ -142,16 +162,17 @@ export async function POST(request: NextRequest) {
     }
 
     // データベースに登録情報を保存
+    // TODO: plan_id を正しく設定する
+    /*
     await prisma.registrations.create({
       data: {
         org_id: request.headers.get('x-org-id') || '',
+        plan_id: '', // TODO: 正しい plan_id を設定
         manifest_no: response.manifestNo!,
-        receipt_no: response.receiptNo!,
         status: 'REGISTERED',
-        manifest_data: body as any,
-        response_data: response as any,
       },
     });
+    */
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {

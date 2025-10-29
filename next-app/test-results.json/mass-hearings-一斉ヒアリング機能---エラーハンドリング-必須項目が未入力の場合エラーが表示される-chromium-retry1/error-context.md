@@ -1,0 +1,45 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "🗑️ BABA Waste" [level=2] [ref=e7]
+      - text: アカウント作成
+    - generic [ref=e8]:
+      - generic [ref=e10]:
+        - generic "名前" [ref=e12]
+        - generic [ref=e16]:
+          - img "user" [ref=e18]:
+            - img [ref=e19]
+          - textbox "名前" [ref=e21]:
+            - /placeholder: 山田 太郎
+      - generic [ref=e23]:
+        - generic "メールアドレス" [ref=e25]
+        - generic [ref=e29]:
+          - img "mail" [ref=e31]:
+            - img [ref=e32]
+          - textbox "メールアドレス" [ref=e34]:
+            - /placeholder: user@example.com
+      - generic [ref=e36]:
+        - generic "パスワード" [ref=e38]
+        - generic [ref=e42]:
+          - img "lock" [ref=e44]:
+            - img [ref=e45]
+          - textbox "パスワード" [ref=e47]
+          - img "eye-invisible" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+      - generic [ref=e54]:
+        - generic "パスワード（確認）" [ref=e56]
+        - generic [ref=e60]:
+          - img "lock" [ref=e62]:
+            - img [ref=e63]
+          - textbox "パスワード（確認）" [ref=e65]
+          - img "eye-invisible" [ref=e67] [cursor=pointer]:
+            - img [ref=e68]
+      - button "アカウント作成" [ref=e76] [cursor=pointer]:
+        - generic [ref=e77]: アカウント作成
+      - button "すでにアカウントをお持ちの方はこちら" [active] [ref=e81] [cursor=pointer]:
+        - generic [ref=e82]: すでにアカウントをお持ちの方はこちら
+```

@@ -5,8 +5,15 @@ import { z } from 'zod'
 // GET /api/collection-requests - 収集依頼一覧取得
 export async function GET(request: NextRequest) {
   try {
+    // 認証チェック
+    const { getAuthenticatedUser } = await import('@/lib/auth/session-server')
+    const authUser = await getAuthenticatedUser(request)
+    
+    if (!authUser || !authUser.org_id) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+    }
+
     const searchParams = request.nextUrl.searchParams
-    const orgId = searchParams.get('org_id')
     const storeId = searchParams.get('store_id')
     const planId = searchParams.get('plan_id')
     const status = searchParams.get('status')
@@ -14,11 +21,9 @@ export async function GET(request: NextRequest) {
     const toDate = searchParams.get('to_date')
     const includeDeleted = searchParams.get('includeDeleted') === 'true'
 
-    // クエリ条件構築
-    const where: any = {}
-    
-    if (orgId) {
-      where.org_id = orgId
+    // クエリ条件構築（org_idは認証ユーザーから取得）
+    const where: any = {
+      org_id: authUser.org_id,
     }
     
     if (storeId) {
@@ -93,78 +98,126 @@ export async function GET(request: NextRequest) {
 
 // POST /api/collection-requests - 収集依頼作成
 export async function POST(request: NextRequest) {
+  // 1. 認証チェック
+  const { getAuthenticatedUser } = await import('@/lib/auth/session-server')
+  const authUser = await getAuthenticatedUser(request)
+  
+  if (!authUser || !authUser.org_id) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  }
+
+  // 2. JSONパース
+  let body
   try {
-    const body = await request.json()
+    body = await request.json()
+  } catch (parseError) {
+    return NextResponse.json(
+      { error: '不正なJSONフォーマットです' },
+      { status: 400 }
+    )
+  }
 
-    // Zodでバリデーション
-    const schema = z.object({
-      org_id: z.string().uuid('Invalid organization ID'),
-      store_id: z.string().uuid('Invalid store ID'),
-      plan_id: z.string().uuid('Invalid plan ID'),
-      request_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: 'Invalid date format',
-      }),
-      requested_pickup_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: 'Invalid date format',
-      }),
-      confirmed_pickup_date: z.string().optional().nullable(),
-      status: z.enum(['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'COLLECTED']).default('PENDING'),
-      notes: z.string().optional(),
-      created_by: z.string().uuid().optional(),
-    })
+  // 3. Zodバリデーション
+  const schema = z.object({
+    org_id: z.string().uuid('Invalid organization ID'),
+    store_id: z.string().uuid('Invalid store ID'),
+    plan_id: z.string().uuid('Invalid plan ID'),
+    request_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
+      message: 'Invalid date format',
+    }),
+    requested_pickup_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
+      message: 'Invalid date format',
+    }),
+    confirmed_pickup_date: z.string().optional().nullable(),
+    status: z.enum(['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'COLLECTED']).default('PENDING'),
+    notes: z.string().optional(),
+  })
 
-    const validatedData = schema.parse(body)
+  let validatedData
+  try {
+    validatedData = schema.parse(body)
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'バリデーションエラー', details: error.errors },
+        { status: 400 }
+      )
+    }
+    return NextResponse.json({ error: '不正なリクエストデータです' }, { status: 400 })
+  }
 
-    // 組織の存在確認
-    const organization = await prisma.organizations.findUnique({
+  // 4. 権限チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(validatedData.org_id)) {
+    return NextResponse.json(
+      { error: 'この組織の収集依頼を作成する権限がありません' },
+      { status: 403 }
+    )
+  }
+
+  // 5. 組織・店舗・予定の存在確認
+  let organization, store, plan
+  try {
+    organization = await prisma.organizations.findUnique({
       where: { id: validatedData.org_id },
     })
 
-    if (!organization ) {
+    if (!organization) {
       return NextResponse.json(
-        { error: 'Not Found', message: 'Organization not found' },
+        { error: '組織が見つかりません' },
         { status: 404 }
       )
     }
 
-    // 店舗の存在確認
-    const store = await prisma.stores.findUnique({
+    store = await prisma.stores.findUnique({
       where: { id: validatedData.store_id },
     })
 
-    if (!store  || store.org_id !== validatedData.org_id) {
+    if (!store || store.org_id !== validatedData.org_id) {
       return NextResponse.json(
-        { error: 'Not Found', message: 'Store not found or does not belong to this organization' },
+        { error: '店舗が見つかりません、または指定された組織に属していません' },
         { status: 404 }
       )
     }
 
-    // 予定の存在確認
-    const plan = await prisma.plan.findUnique({
+    plan = await prisma.plans.findUnique({
       where: { id: validatedData.plan_id },
     })
 
-    if (!plan  || plan.org_id !== validatedData.org_id) {
+    if (!plan || plan.org_id !== validatedData.org_id) {
       return NextResponse.json(
-        { error: 'Not Found', message: 'Plan not found or does not belong to this organization' },
+        { error: '予定が見つかりません、または指定された組織に属していません' },
         { status: 404 }
       )
     }
+  } catch (dbError) {
+    console.error('[POST /api/collection-requests] 存在確認エラー:', dbError)
+    return NextResponse.json(
+      { error: 'データベースエラーが発生しました' },
+      { status: 500 }
+    )
+  }
 
-    // 日付変換
-    const requestData: any = {
-      ...validatedData,
-      request_date: new Date(validatedData.request_date),
-      requested_pickup_date: new Date(validatedData.requested_pickup_date),
-      updated_by: validatedData.created_by,
-    }
+  // 6. 日付変換
+  const requestData: any = {
+    org_id: validatedData.org_id,
+    store_id: validatedData.store_id,
+    plan_id: validatedData.plan_id,
+    request_date: new Date(validatedData.request_date),
+    requested_pickup_date: new Date(validatedData.requested_pickup_date),
+    status: validatedData.status,
+    notes: validatedData.notes,
+    created_by: authUser.id,
+    updated_by: authUser.id,
+  }
 
-    if (validatedData.confirmed_pickup_date) {
-      requestData.confirmed_pickup_date = new Date(validatedData.confirmed_pickup_date)
-    }
+  if (validatedData.confirmed_pickup_date) {
+    requestData.confirmed_pickup_date = new Date(validatedData.confirmed_pickup_date)
+  }
 
-    // 作成
-    const collectionRequest = await prisma.collection_requests.create({
+  // 7. 作成
+  let collectionRequest
+  try {
+    collectionRequest = await prisma.collection_requests.create({
       data: requestData,
       include: {
         organizations: {
@@ -181,32 +234,19 @@ export async function POST(request: NextRequest) {
             name: true,
           },
         },
-        plan: {
-          select: {
-            id: true,
-            item_name: true,
-          },
-        },
       },
     })
-
+  } catch (dbError) {
+    console.error('[POST /api/collection-requests] Prisma作成エラー:', dbError)
     return NextResponse.json(
-      { data: collectionRequest, message: 'Collection request created successfully' },
-      { status: 201 }
-    )
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation Error', details: error.errors },
-        { status: 400 }
-      )
-    }
-
-    console.error('[API] Failed to create collection request:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to create collection request' },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
     )
   }
+
+  return NextResponse.json(
+    { data: collectionRequest, message: '収集依頼を作成しました' },
+    { status: 201 }
+  )
 }
 

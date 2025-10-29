@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { getAuthenticatedUser } from '@/lib/auth/session-server';
 
 // バリデーションスキーマ
 const JwnetPartyCombinationCreateSchema = z.object({
@@ -48,40 +49,54 @@ const JwnetPartyCombinationCreateSchema = z.object({
 
 // GET /api/jwnet-party-combinations - 一覧取得
 export async function GET(request: NextRequest) {
+  // 認証チェック
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const org_id = searchParams.get('org_id');
+  const is_active = searchParams.get('is_active');
+  const emitter_org_id = searchParams.get('emitter_org_id');
+  const transporter_org_id = searchParams.get('transporter_org_id');
+  const disposer_org_id = searchParams.get('disposer_org_id');
+
+  // フィルター条件構築
+  const where: any = {};
+
+  const targetOrgId = org_id || authUser.org_id;
+  if (targetOrgId) {
+    // 権限チェック
+    if (!authUser.isSystemAdmin && !authUser.org_ids.includes(targetOrgId)) {
+      return NextResponse.json(
+        { error: 'この組織の事業者組み合わせを閲覧する権限がありません' },
+        { status: 403 }
+      );
+    }
+    where.org_id = targetOrgId;
+  }
+
+  if (is_active !== null) {
+    where.is_active = is_active === 'true';
+  }
+
+  if (emitter_org_id) {
+    where.emitter_org_id = emitter_org_id;
+  }
+
+  if (transporter_org_id) {
+    where.transporter_org_id = transporter_org_id;
+  }
+
+  if (disposer_org_id) {
+    where.disposer_org_id = disposer_org_id;
+  }
+
+  // データ取得
+  let combinations;
   try {
-    const { searchParams } = new URL(request.url);
-    const org_id = searchParams.get('org_id');
-    const is_active = searchParams.get('is_active');
-    const emitter_org_id = searchParams.get('emitter_org_id');
-    const transporter_org_id = searchParams.get('transporter_org_id');
-    const disposer_org_id = searchParams.get('disposer_org_id');
-
-    // フィルター条件構築
-    const where: any = {};
-
-    if (org_id) {
-      where.org_id = org_id;
-    }
-
-    if (is_active !== null) {
-      where.is_active = is_active === 'true';
-    }
-
-    if (emitter_org_id) {
-      where.emitter_org_id = emitter_org_id;
-    }
-
-    if (transporter_org_id) {
-      where.transporter_org_id = transporter_org_id;
-    }
-
-    if (disposer_org_id) {
-      where.disposer_org_id = disposer_org_id;
-    }
-
-    // 論理削除されていないレコードのみ取得
-
-    const combinations = await prisma.jwnet_party_combinations.findMany({
+    combinations = await prisma.jwnet_party_combinations.findMany({
       where,
       include: {
         organizations_jwnet_party_combinations_emitter_org_idToorganizations: {
@@ -110,30 +125,62 @@ export async function GET(request: NextRequest) {
         created_at: 'desc',
       },
     });
-
-    return NextResponse.json(combinations, { status: 200 });
-  } catch (error) {
-    console.error('[JWNET Party Combinations] GET error:', error);
+  } catch (dbError) {
+    console.error('[GET /api/jwnet-party-combinations] Prisma検索エラー:', dbError);
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
     );
   }
+
+  return NextResponse.json({
+    data: combinations,
+    count: combinations.length,
+  }, { status: 200 });
 }
 
 // POST /api/jwnet-party-combinations - 新規作成
 export async function POST(request: NextRequest) {
+  // 認証チェック
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  // JSONパース
+  let body;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 });
+  }
 
-    // バリデーション
-    const validatedData = JwnetPartyCombinationCreateSchema.parse(body);
+  // バリデーション
+  let validatedData;
+  try {
+    validatedData = JwnetPartyCombinationCreateSchema.parse(body);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ error: '不正なリクエストデータです' }, { status: 400 });
+  }
 
-    // 組織の存在確認
-    const [emitterOrg, transporterOrg, disposerOrg] = await Promise.all([
+  // 権限チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(validatedData.org_id)) {
+    return NextResponse.json(
+      { error: 'この組織の事業者組み合わせを作成する権限がありません' },
+      { status: 403 }
+    );
+  }
+
+  // 組織の存在確認
+  let emitterOrg, transporterOrg, disposerOrg;
+  try {
+    [emitterOrg, transporterOrg, disposerOrg] = await Promise.all([
       prisma.organizations.findUnique({
         where: { id: validatedData.emitter_org_id },
       }),
@@ -144,30 +191,39 @@ export async function POST(request: NextRequest) {
         where: { id: validatedData.disposer_org_id },
       }),
     ]);
+  } catch (dbError) {
+    console.error('[POST /api/jwnet-party-combinations] Prisma検索エラー:', dbError);
+    return NextResponse.json(
+      { error: 'データベースエラーが発生しました' },
+      { status: 500 }
+    );
+  }
 
-    if (!emitterOrg ) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Emitter organization not found' },
-        { status: 404 }
-      );
-    }
+  if (!emitterOrg) {
+    return NextResponse.json(
+      { error: '排出事業者組織が見つかりません' },
+      { status: 404 }
+    );
+  }
 
-    if (!transporterOrg ) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Transporter organization not found' },
-        { status: 404 }
-      );
-    }
+  if (!transporterOrg) {
+    return NextResponse.json(
+      { error: '運搬業者組織が見つかりません' },
+      { status: 404 }
+    );
+  }
 
-    if (!disposerOrg ) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Disposer organization not found' },
-        { status: 404 }
-      );
-    }
+  if (!disposerOrg) {
+    return NextResponse.json(
+      { error: '処分業者組織が見つかりません' },
+      { status: 404 }
+    );
+  }
 
-    // 重複チェック（同じ組み合わせが既に存在しないか）
-    const existingCombination = await prisma.jwnet_party_combinations.findFirst({
+  // 重複チェック（同じ組み合わせが既に存在しないか）
+  let existingCombination;
+  try {
+    existingCombination = await prisma.jwnet_party_combinations.findFirst({
       where: {
         emitter_subscriber_no: validatedData.emitter_subscriber_no,
         emitter_public_confirm_no: validatedData.emitter_public_confirm_no,
@@ -177,20 +233,28 @@ export async function POST(request: NextRequest) {
         disposer_public_confirm_no: validatedData.disposer_public_confirm_no,
       },
     });
+  } catch (dbError) {
+    console.error('[POST /api/jwnet-party-combinations] Prisma重複チェックエラー:', dbError);
+    return NextResponse.json(
+      { error: 'データベースエラーが発生しました' },
+      { status: 500 }
+    );
+  }
 
-    if (existingCombination) {
-      return NextResponse.json(
-        {
-          error: 'Conflict',
-          message: 'This party combination already exists',
-          existing_id: existingCombination.id,
-        },
-        { status: 409 }
-      );
-    }
+  if (existingCombination) {
+    return NextResponse.json(
+      {
+        error: 'この事業者組み合わせは既に存在します',
+        existing_id: existingCombination.id,
+      },
+      { status: 409 }
+    );
+  }
 
-    // 新規作成
-    const combination = await prisma.jwnet_party_combinations.create({
+  // 新規作成
+  let combination;
+  try {
+    combination = await prisma.jwnet_party_combinations.create({
       data: {
         org_id: validatedData.org_id,
         emitter_org_id: validatedData.emitter_org_id,
@@ -217,8 +281,8 @@ export async function POST(request: NextRequest) {
         valid_from: new Date(validatedData.valid_from),
         valid_to: validatedData.valid_to ? new Date(validatedData.valid_to) : null,
         notes: validatedData.notes,
-        created_by: validatedData.created_by,
-        updated_by: validatedData.created_by,
+        created_by: authUser.id,
+        updated_by: authUser.id,
       },
       include: {
         organizations_jwnet_party_combinations_emitter_org_idToorganizations: {
@@ -244,28 +308,14 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-
-    return NextResponse.json(combination, { status: 201 });
-  } catch (error) {
-    console.error('[JWNET Party Combinations] POST error:', error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Validation error',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
-    }
-
+  } catch (dbError) {
+    console.error('[POST /api/jwnet-party-combinations] Prisma作成エラー:', dbError);
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
     );
   }
+
+  return NextResponse.json(combination, { status: 201 });
 }
 

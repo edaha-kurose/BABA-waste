@@ -1,0 +1,50 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - heading "🗑️ BABA Waste" [level=2] [ref=e6]
+      - text: 廃棄物管理システム
+    - generic [ref=e7]:
+      - generic [ref=e9]:
+        - generic "メールアドレス" [ref=e11]
+        - generic [ref=e15]:
+          - img "mail" [ref=e17]:
+            - img [ref=e18]
+          - textbox "メールアドレス" [ref=e20]:
+            - /placeholder: user@example.com
+      - generic [ref=e22]:
+        - generic "パスワード" [ref=e24]
+        - generic [ref=e28]:
+          - img "lock" [ref=e30]:
+            - img [ref=e31]
+          - textbox "パスワード" [ref=e33]
+          - img "eye-invisible" [ref=e35] [cursor=pointer]:
+            - img [ref=e36]
+      - button "ログイン" [ref=e44] [cursor=pointer]:
+        - generic [ref=e45]: ログイン
+      - generic [ref=e47]:
+        - button "アカウントを作成する" [ref=e49] [cursor=pointer]:
+          - generic [ref=e50]: アカウントを作成する
+        - link "パスワードをお忘れですか？" [ref=e52] [cursor=pointer]:
+          - /url: /forgot-password
+    - separator [ref=e53]:
+      - generic [ref=e54]: または
+    - link "truck 収集業者としてログイン" [ref=e55] [cursor=pointer]:
+      - /url: /collector-login
+      - button "truck 収集業者としてログイン" [ref=e56]:
+        - img "truck" [ref=e58]:
+          - img [ref=e59]
+        - generic [ref=e61]: 収集業者としてログイン
+    - generic [ref=e63]:
+      - strong [ref=e65]: 🚀 クイックログイン（テスト用）
+      - generic [ref=e66]:
+        - button "👤 管理者でログイン (admin@test.com)" [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]: 👤 管理者でログイン (admin@test.com)
+        - button "👥 収集業者でログイン (collector@test.com)" [ref=e71] [cursor=pointer]:
+          - generic [ref=e72]: 👥 収集業者でログイン (collector@test.com)
+        - button "🏭 排出事業者でログイン (emitter@test.com)" [ref=e74] [cursor=pointer]:
+          - generic [ref=e75]: 🏭 排出事業者でログイン (emitter@test.com)
+  - alert [ref=e76]
+```

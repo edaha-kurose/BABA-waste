@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { getAuthenticatedUser } from '@/lib/auth/session-server'
 
 // GET /api/stores/[id] - 店舗詳細取得
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  let store
   try {
-    const store = await prisma.stores.findUnique({
+    store = await prisma.stores.findUnique({
       where: { id: params.id },
       include: {
         organizations: {
@@ -19,42 +26,48 @@ export async function GET(
           },
         },
         plans: {
-          orderBy: { planned_pickup_date: 'desc' },
+          orderBy: { planned_date: 'desc' },
           take: 10,
           select: {
             id: true,
-            planned_pickup_date: true,
-            item_name: true,
-            planned_quantity: true,
+            planned_date: true,
+            planned_qty: true,
             unit: true,
-            status: true,
+            earliest_pickup_date: true,
           },
         },
         _count: {
           select: {
             plans: true,
-            collectionRequests: true,
-            collections: true,
+            collection_requests: true,
           },
         },
       },
-    })
-
-    if (!store || store.deleted_at) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Store not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json({ data: store })
-  } catch (error) {
-    console.error('[API] Failed to fetch store:', error)
+    });
+  } catch (dbError) {
+    console.error('[GET /api/stores/[id]] Prisma検索エラー:', dbError);
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to fetch store' },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
+    );
+  }
+
+  if (!store || store.deleted_at) {
+    return NextResponse.json(
+      { error: 'Not Found', message: 'Store not found' },
+      { status: 404 }
     )
   }
+
+  // 権限チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(store.org_id)) {
+    return NextResponse.json(
+      { error: 'この店舗を閲覧する権限がありません' },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json({ data: store })
 }
 
 // PATCH /api/stores/[id] - 店舗更新
@@ -62,8 +75,19 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  let body
   try {
-    const body = await request.json()
+    body = await request.json();
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 });
+  }
+
+  try {
 
     // Zodでバリデーション
     const schema = z.object({
@@ -89,15 +113,32 @@ export async function PATCH(
     const validatedData = schema.parse(body)
 
     // 存在チェック
-    const existing = await prisma.stores.findUnique({
-      where: { id: params.id },
-    })
+    let existing
+    try {
+      existing = await prisma.stores.findUnique({
+        where: { id: params.id },
+      });
+    } catch (dbError) {
+      console.error('[PATCH /api/stores/[id]] Prisma検索エラー:', dbError);
+      return NextResponse.json(
+        { error: 'データベースエラーが発生しました' },
+        { status: 500 }
+      );
+    }
 
     if (!existing || existing.deleted_at) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Store not found' },
         { status: 404 }
       )
+    }
+
+    // 権限チェック
+    if (!authUser.isSystemAdmin && !authUser.org_ids.includes(existing.org_id)) {
+      return NextResponse.json(
+        { error: 'この店舗を更新する権限がありません' },
+        { status: 403 }
+      );
     }
 
     // コード重複チェック（変更時）
@@ -130,19 +171,28 @@ export async function PATCH(
     }
 
     // 更新
-    const store = await prisma.stores.update({
-      where: { id: params.id },
-      data: updateData,
-      include: {
-        organizations: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
+    let store
+    try {
+      store = await prisma.stores.update({
+        where: { id: params.id },
+        data: { ...updateData, updated_by: authUser.id },
+        include: {
+          organizations: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
           },
         },
-      },
-    })
+      });
+    } catch (dbError) {
+      console.error('[PATCH /api/stores/[id]] Prisma更新エラー:', dbError);
+      return NextResponse.json(
+        { error: 'データベースエラーが発生しました' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       data: store,
@@ -169,41 +219,61 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  // 存在チェック
+  let existing
   try {
-    const searchParams = request.nextUrl.searchParams
-    const updated_by = searchParams.get('updated_by') || undefined
-
-    // 存在チェック
-    const existing = await prisma.stores.findUnique({
+    existing = await prisma.stores.findUnique({
       where: { id: params.id },
-    })
+    });
+  } catch (dbError) {
+    console.error('[DELETE /api/stores/[id]] Prisma検索エラー:', dbError);
+    return NextResponse.json(
+      { error: 'データベースエラーが発生しました' },
+      { status: 500 }
+    );
+  }
 
-    if (!existing || existing.deleted_at) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Store not found' },
-        { status: 404 }
-      )
-    }
+  if (!existing || existing.deleted_at) {
+    return NextResponse.json(
+      { error: 'Not Found', message: 'Store not found' },
+      { status: 404 }
+    )
+  }
 
-    // 論理削除
-    const store = await prisma.stores.update({
+  // 権限チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(existing.org_id)) {
+    return NextResponse.json(
+      { error: 'この店舗を削除する権限がありません' },
+      { status: 403 }
+    );
+  }
+
+  // 論理削除
+  let store
+  try {
+    store = await prisma.stores.update({
       where: { id: params.id },
       data: {
         deleted_at: new Date(),
-        updated_by,
+        updated_by: authUser.id,
       },
-    })
-
-    return NextResponse.json({
-      data: store,
-      message: 'Store deleted successfully',
-    })
-  } catch (error) {
-    console.error('[API] Failed to delete store:', error)
+    });
+  } catch (dbError) {
+    console.error('[DELETE /api/stores/[id]] Prisma削除エラー:', dbError);
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to delete store' },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
-    )
+    );
   }
+
+  return NextResponse.json({
+    data: store,
+    message: 'Store deleted successfully',
+  })
 }
 

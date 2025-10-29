@@ -11,7 +11,7 @@ export type AppRole = 'ADMIN' | 'EMITTER' | 'TRANSPORTER'
 /**
  * ロール別の権限マトリクス
  */
-export const ROLE_PERMISSIONS = {
+const ROLE_PERMISSIONS = {
   ADMIN: {
     label: '管理者',
     canAccessDashboard: true,

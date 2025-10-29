@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { getAuthenticatedUser } from '@/lib/auth/session-server';
 
 // バリデーションスキーマ（更新用）
 const JwnetPartyCombinationUpdateSchema = z.object({
@@ -42,60 +43,71 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = params;
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
 
-    const combination = await prisma.jwnetPartyCombination.findUnique({
+  const { id } = params;
+
+  let combination
+  try {
+    combination = await prisma.jwnet_party_combinations.findUnique({
       where: { id },
       include: {
-        emitter: {
+        organizations_jwnet_party_combinations_emitter_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
-            jwnet_subscriber_id: true,
-            jwnet_public_confirmation_id: true,
           },
         },
-        transporter: {
+        organizations_jwnet_party_combinations_transporter_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
-            jwnet_subscriber_id: true,
-            jwnet_public_confirmation_id: true,
           },
         },
-        disposer: {
+        organizations_jwnet_party_combinations_disposer_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
-            jwnet_subscriber_id: true,
-            jwnet_public_confirmation_id: true,
           },
         },
       },
     });
-
-    if (!combination || combination.deleted_at) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'JWNET party combination not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(combination, { status: 200 });
-  } catch (error) {
-    console.error('[JWNET Party Combination] GET error:', error);
+  } catch (dbError) {
+    console.error('[GET /api/jwnet-party-combinations/[id]] Prisma検索エラー:', dbError);
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
     );
   }
+
+  if (!combination || combination.deleted_at) {
+    return NextResponse.json(
+      { error: 'Not Found', message: 'JWNET party combination not found' },
+      { status: 404 }
+    );
+  }
+
+  // 権限チェック: システム管理者または関連組織に属するユーザー
+  const relatedOrgIds = [
+    combination.emitter_org_id,
+    combination.transporter_org_id,
+    combination.disposer_org_id,
+  ];
+  
+  if (!authUser.isSystemAdmin && !relatedOrgIds.some(orgId => authUser.org_ids.includes(orgId))) {
+    return NextResponse.json(
+      { error: 'この組み合わせを閲覧する権限がありません' },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json(combination, { status: 200 });
 }
 
 // PATCH /api/jwnet-party-combinations/[id] - 更新
@@ -103,22 +115,50 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  const { id } = params;
+  let body
   try {
-    const { id } = params;
-    const body = await request.json();
+    body = await request.json();
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 });
+  }
+
+  try {
 
     // バリデーション
     const validatedData = JwnetPartyCombinationUpdateSchema.parse(body);
 
     // 存在確認
-    const existingCombination = await prisma.jwnetPartyCombination.findUnique({
-      where: { id },
-    });
+    let existingCombination
+    try {
+      existingCombination = await prisma.jwnet_party_combinations.findUnique({
+        where: { id },
+      });
+    } catch (dbError) {
+      console.error('[PATCH /api/jwnet-party-combinations/[id]] Prisma検索エラー:', dbError);
+      return NextResponse.json(
+        { error: 'データベースエラーが発生しました' },
+        { status: 500 }
+      );
+    }
 
     if (!existingCombination || existingCombination.deleted_at) {
       return NextResponse.json(
         { error: 'Not Found', message: 'JWNET party combination not found' },
         { status: 404 }
+      );
+    }
+
+    // 権限チェック: システム管理者のみ
+    if (!authUser.isSystemAdmin) {
+      return NextResponse.json(
+        { error: 'システム管理者権限が必要です' },
+        { status: 403 }
       );
     }
 
@@ -177,25 +217,27 @@ export async function PATCH(
     }
 
     // 更新
-    const combination = await prisma.jwnetPartyCombination.update({
+    let combination
+    try {
+      combination = await prisma.jwnet_party_combinations.update({
       where: { id },
       data: updateData,
       include: {
-        emitter: {
+        organizations_jwnet_party_combinations_emitter_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        transporter: {
+        organizations_jwnet_party_combinations_transporter_org_idToorganizations: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        disposer: {
+        organizations_jwnet_party_combinations_disposer_org_idToorganizations: {
           select: {
             id: true,
             name: true,
@@ -204,6 +246,13 @@ export async function PATCH(
         },
       },
     });
+    } catch (dbError) {
+      console.error('[PATCH /api/jwnet-party-combinations/[id]] Prisma更新エラー:', dbError);
+      return NextResponse.json(
+        { error: 'データベースエラーが発生しました' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(combination, { status: 200 });
   } catch (error) {
@@ -234,45 +283,62 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = params;
-    const { searchParams } = new URL(request.url);
-    const updated_by = searchParams.get('updated_by');
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
 
-    // 存在確認
-    const existingCombination = await prisma.jwnetPartyCombination.findUnique({
-      where: { id },
-    });
-
-    if (!existingCombination || existingCombination.deleted_at) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'JWNET party combination not found' },
-        { status: 404 }
-      );
-    }
-
-    // 論理削除
-    await prisma.jwnetPartyCombination.update({
-      where: { id },
-      data: {
-        deleted_at: new Date(),
-        updated_by: updated_by || undefined,
-      },
-    });
-
+  // 権限チェック: システム管理者のみ
+  if (!authUser.isSystemAdmin) {
     return NextResponse.json(
-      { message: 'JWNET party combination deleted successfully' },
-      { status: 200 }
+      { error: 'システム管理者権限が必要です' },
+      { status: 403 }
     );
-  } catch (error) {
-    console.error('[JWNET Party Combination] DELETE error:', error);
+  }
+
+  const { id } = params;
+
+  // 存在確認
+  let existingCombination
+  try {
+    existingCombination = await prisma.jwnet_party_combinations.findUnique({
+      where: { id },
+    });
+  } catch (dbError) {
+    console.error('[DELETE /api/jwnet-party-combinations/[id]] Prisma検索エラー:', dbError);
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
     );
   }
+
+  if (!existingCombination || existingCombination.deleted_at) {
+    return NextResponse.json(
+      { error: 'Not Found', message: 'JWNET party combination not found' },
+      { status: 404 }
+    );
+  }
+
+  // 論理削除
+  try {
+    await prisma.jwnet_party_combinations.update({
+      where: { id },
+      data: {
+        deleted_at: new Date(),
+        updated_by: authUser.id,
+      },
+    });
+  } catch (dbError) {
+    console.error('[DELETE /api/jwnet-party-combinations/[id]] Prisma削除エラー:', dbError);
+    return NextResponse.json(
+      { error: 'データベースエラーが発生しました' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(
+    { message: 'JWNET party combination deleted successfully' },
+    { status: 200 }
+  );
 }
 

@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Table, Button, Input, Space, message, Modal, Form, Switch, Tag } from 'antd'
+import { Table, Button, Input, Space, Modal, Form, Switch, Tag, App, Spin } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
+import { useUser } from '@/lib/auth/session'
+import { useRouter } from 'next/navigation'
 
 const { Search } = Input
 
@@ -25,6 +27,9 @@ interface Store {
 }
 
 export default function StoresPage() {
+  const { message: messageApi } = App.useApp()
+  const { user, userOrg, userRole, loading: authLoading } = useUser()
+  const router = useRouter()
   const [stores, setStores] = useState<Store[]>([])
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -32,32 +37,72 @@ export default function StoresPage() {
   const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
 
+  // 認証チェック（userとuserOrgの両方を確認）
+  useEffect(() => {
+    // ローディング中は何もしない
+    if (authLoading) {
+      return
+    }
+    
+    // user が存在しない、または userOrg が存在しない場合はログアウト
+    if (!user || !userOrg) {
+      console.log('[Stores] ログアウト: 認証情報がありません', { hasUser: !!user, hasUserOrg: !!userOrg })
+      router.push('/login')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user, userOrg])
+
   // データ取得
   const fetchStores = async () => {
+    if (!userOrg) {
+      console.log('[Stores] fetchStores: userOrgがないのでスキップ')
+      return
+    }
+    
+    console.log('[Stores] fetchStores: 開始')
     setLoading(true)
     try {
       const params = new URLSearchParams()
       if (searchText) params.append('search', searchText)
 
-      const response = await fetch(`/api/stores?${params.toString()}`)
+      console.log('[Stores] API呼び出し:', `/api/stores?${params.toString()}`)
+      const response = await fetch(`/api/stores?${params.toString()}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // クッキーを含める
+      })
+      
+      console.log('[Stores] APIレスポンス:', response.status)
       const result = await response.json()
 
       if (response.ok) {
-        setStores(result.data)
+        console.log('[Stores] データ取得成功:', result.count, '件')
+        setStores(Array.isArray(result) ? result : result.data || [])
       } else {
-        message.error(result.message || '店舗データの取得に失敗しました')
+        console.log('[Stores] APIエラー:', response.status, result)
+        if (response.status === 401) {
+          console.log('[Stores] 401エラー: ログインページへリダイレクト')
+          messageApi.error('認証に失敗しました。再ログインしてください')
+          router.push('/login')
+        } else {
+          messageApi.error(result.message || '店舗データの取得に失敗しました')
+        }
       }
     } catch (error) {
-      message.error('店舗データの取得中にエラーが発生しました')
-      console.error('Error fetching stores:', error)
+      console.error('[Stores] fetchStoresエラー:', error)
+      messageApi.error('店舗データの取得中にエラーが発生しました')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchStores()
-  }, [])
+    if (userOrg) {
+      fetchStores()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userOrg?.id])
 
   // 検索
   const handleSearch = () => {
@@ -103,14 +148,14 @@ export default function StoresPage() {
       const result = await response.json()
 
       if (response.ok) {
-        message.success(editingStore ? '店舗を更新しました' : '店舗を作成しました')
+        messageApi.success(editingStore ? '店舗を更新しました' : '店舗を作成しました')
         handleCancel()
         fetchStores()
       } else {
-        message.error(result.message || '操作に失敗しました')
+        messageApi.error(result.message || '操作に失敗しました')
       }
     } catch (error) {
-      message.error('操作中にエラーが発生しました')
+      messageApi.error('操作中にエラーが発生しました')
       console.error('Error submitting store:', error)
     }
   }
@@ -132,13 +177,13 @@ export default function StoresPage() {
           const result = await response.json()
 
           if (response.ok) {
-            message.success('店舗を削除しました')
+            messageApi.success('店舗を削除しました')
             fetchStores()
           } else {
-            message.error(result.message || '削除に失敗しました')
+            messageApi.error(result.message || '削除に失敗しました')
           }
         } catch (error) {
-          message.error('削除中にエラーが発生しました')
+          messageApi.error('削除中にエラーが発生しました')
           console.error('Error deleting store:', error)
         }
       },
@@ -146,6 +191,22 @@ export default function StoresPage() {
   }
 
   // テーブルカラム定義
+  // ローディング中は表示しない
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spin size="large" spinning tip="認証情報を確認中...">
+          <div style={{ padding: 50 }} />
+        </Spin>
+      </div>
+    )
+  }
+
+  // ログインしていない場合は何も表示しない（useEffectでリダイレクト）
+  if (!userOrg) {
+    return null
+  }
+
   const columns: ColumnsType<Store> = [
     {
       title: '店舗コード',

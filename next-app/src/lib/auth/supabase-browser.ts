@@ -5,38 +5,56 @@
 
 'use client'
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createBrowserClient as createSupabaseBrowserClient } from '@supabase/ssr'
 
-// シングルトンインスタンス（appスキーマ対応）
-let supabaseInstance: SupabaseClient<any, 'public', 'app'> | null = null
+// シングルトンインスタンス
+let supabaseInstance: ReturnType<typeof createSupabaseBrowserClient> | null = null
 
 // クライアントサイド用 Supabase クライアント（シングルトン）
-export function createBrowserClient(): SupabaseClient<any, 'public', 'app'> {
+export function createBrowserClient() {
   // 既存のインスタンスがあればそれを返す
   if (supabaseInstance) {
     return supabaseInstance
   }
 
-  // 新しいインスタンスを作成
-  supabaseInstance = createClient(
+  // 新しいインスタンスを作成（@supabase/ssr を使用）
+  supabaseInstance = createSupabaseBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
       db: {
-        schema: 'app', // appスキーマを使用
+        schema: 'app' as any, // appスキーマをデフォルトに設定（型アサーション）
+      },
+      cookies: {
+        get(name: string) {
+          if (typeof document === 'undefined') return undefined
+          const value = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith(`${name}=`))
+            ?.split('=')[1]
+          return value
+        },
+        set(name: string, value: string, options: any) {
+          if (typeof document === 'undefined') return
+          let cookie = `${name}=${value}`
+          if (options?.maxAge) cookie += `; max-age=${options.maxAge}`
+          if (options?.path) cookie += `; path=${options.path}`
+          if (options?.domain) cookie += `; domain=${options.domain}`
+          if (options?.sameSite) cookie += `; samesite=${options.sameSite}`
+          if (options?.secure) cookie += '; secure'
+          document.cookie = cookie
+        },
+        remove(name: string, options: any) {
+          if (typeof document === 'undefined') return
+          document.cookie = `${name}=; path=${options?.path || '/'}; max-age=0`
+        },
       },
     }
   )
 
-  console.log('🔧 Supabaseクライアント作成（シングルトン）')
+  console.log('🔧 Supabaseクライアント作成（SSR対応）')
   console.log('🔧 SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-  console.log('🔧 localStorage available:', typeof window !== 'undefined' && !!window.localStorage)
-  console.log('🔧 Schema: app')
+  console.log('🔧 Cookie support: enabled')
   return supabaseInstance
 }
 

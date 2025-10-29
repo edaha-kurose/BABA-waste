@@ -3,6 +3,7 @@
  * Server Components、API Routes、Server Actions で使用
  */
 
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
@@ -10,20 +11,31 @@ import { cookies } from 'next/headers'
 export async function createServerClient() {
   const cookieStore = await cookies()
 
-  return createClient(
+  return createSupabaseServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: {
-        persistSession: false,
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set(name, value, options)
+          } catch (error) {
+            // set メソッドは Server Component では呼び出せない
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.delete(name)
+          } catch (error) {
+            // delete メソッドは Server Component では呼び出せない
+          }
+        },
       },
       db: {
-        schema: 'app', // appスキーマを使用
-      },
-      global: {
-        headers: {
-          cookie: cookieStore.toString(),
-        },
+        schema: 'app' as any, // appスキーマを使用（型アサーション）
       },
     }
   )
@@ -44,7 +56,7 @@ export function createServiceRoleClient() {
         autoRefreshToken: false,
       },
       db: {
-        schema: 'app', // appスキーマを使用
+        schema: 'app' as any, // appスキーマを使用（型アサーション）
       },
     }
   )

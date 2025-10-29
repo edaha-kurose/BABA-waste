@@ -1,0 +1,67 @@
+/// 年間廃棄物報告書（事業系ごみ・不燃ごみ等の年間報告書）
+model annual_waste_reports {
+  id                   String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id               String                       @db.Uuid
+  fiscal_year          Int
+  report_type          String                       @db.VarChar(50)
+  report_period_from   DateTime                     @db.Date
+  report_period_to     DateTime                     @db.Date
+  status               String                       @default("DRAFT") @db.VarChar(20)
+  submitted_at         DateTime?                    @db.Timestamptz(6)
+  submitted_by         String?                      @db.Uuid
+  approved_at          DateTime?                    @db.Timestamptz(6)
+  approved_by          String?                      @db.Uuid
+  report_file_url      String?
+  notes                String?
+  created_at           DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                     @default(now()) @db.Timestamptz(6)
+  created_by           String?                      @db.Uuid
+  updated_by           String?                      @db.Uuid
+  deleted_at           DateTime?                    @db.Timestamptz(6)
+  organizations        organizations                @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  submitted_by_user    auth_users?                  @relation("annual_reports_submitted_by", fields: [submitted_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  approved_by_user     auth_users?                  @relation("annual_reports_approved_by", fields: [approved_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  created_by_user      auth_users?                  @relation("annual_reports_created_by", fields: [created_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  updated_by_user      auth_users?                  @relation("annual_reports_updated_by", fields: [updated_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  items                annual_waste_report_items[]
+
+  @@unique([org_id, fiscal_year, report_type], map: "unique_annual_report_per_year")
+  @@index([org_id], map: "idx_annual_reports_org")
+  @@index([fiscal_year], map: "idx_annual_reports_fiscal_year")
+  @@index([status], map: "idx_annual_reports_status")
+  @@schema("app")
+}
+
+/// 年間廃棄物報告書明細（店舗×業者×廃棄物種別ごとの集計）
+model annual_waste_report_items {
+  id                  String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  report_id           String                 @db.Uuid
+  store_id            String                 @db.Uuid
+  collector_id        String                 @db.Uuid
+  waste_type_id       String                 @db.Uuid
+  item_label          String                 @db.VarChar(255)
+  total_quantity      Decimal                @db.Decimal(10, 2)
+  unit                String                 @db.VarChar(10)
+  unit_price          Decimal?               @db.Decimal(10, 2)
+  total_amount        Decimal?               @db.Decimal(12, 2)
+  collection_count    Int                    @default(0)
+  notes               String?
+  created_at          DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime               @default(now()) @db.Timestamptz(6)
+  created_by          String?                @db.Uuid
+  updated_by          String?                @db.Uuid
+  report              annual_waste_reports   @relation(fields: [report_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  store               stores                 @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  collector           collectors             @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  waste_type          waste_type_masters     @relation(fields: [waste_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_by_user     auth_users?            @relation("annual_report_items_created_by", fields: [created_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  updated_by_user     auth_users?            @relation("annual_report_items_updated_by", fields: [updated_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([report_id], map: "idx_annual_report_items_report")
+  @@index([store_id], map: "idx_annual_report_items_store")
+  @@index([collector_id], map: "idx_annual_report_items_collector")
+  @@schema("app")
+}
+
+
+

@@ -7,9 +7,11 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '10mb',
     },
+    // ESMの外部化を緩和
+    esmExternals: 'loose',
   },
-  // Ant Designの最適化
-  transpilePackages: ['antd', '@ant-design/icons'],
+  // Ant Designの最適化を削除（問題の原因）
+  transpilePackages: [],
 }
 
 module.exports = nextConfig

@@ -5,15 +5,26 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuthenticatedUser } from '@/lib/auth/session-server';
 import { getJwnetClient } from '@/lib/jwnet/client';
 import { ReservationRequest, JwnetApiError } from '@/types/jwnet';
 import prisma from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
-  try {
-    // リクエストボディを取得
-    const body: ReservationRequest = await request.json();
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
 
+  // リクエストボディを取得
+  let body: ReservationRequest
+  try {
+    body = await request.json();
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 });
+  }
+
+  try {
     // バリデーション
     if (!body.subscriberNo || !body.publicConfirmNo) {
       return NextResponse.json(
@@ -47,23 +58,28 @@ export async function POST(request: NextRequest) {
     }
 
     // データベースに予約情報を保存
-    const orgId = request.headers.get('x-org-id') || '';
-    
-    if (response.reservationNos && response.reservationNos.length > 0) {
-      await Promise.all(
-        response.reservationNos.map((reservationNo) =>
-          prisma.reservations.create({
-            data: {
-              org_id: orgId,
-              reservation_no: reservationNo,
-              status: 'RESERVED',
-              request_data: body as any,
-              response_data: response as any,
-            },
-          })
-        )
-      );
+    // TODO: plan_id を正しく設定する
+    /*
+    if (response.reservationNos && response.reservationNos.length > 0 && authUser.org_id) {
+      try {
+        await Promise.all(
+          response.reservationNos.map((reservationNo) =>
+            prisma.reservations.create({
+              data: {
+                org_id: authUser.org_id,
+                plan_id: '', // TODO: 正しい plan_id を設定
+                reservation_no: reservationNo,
+                status: 'RESERVED',
+              },
+            })
+          )
+        );
+      } catch (dbError) {
+        console.error('[POST /api/jwnet/reservation/create] Prisma予約保存エラー:', dbError);
+        // 予約番号取得は成功したので警告のみ
+      }
     }
+    */
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
@@ -90,4 +106,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

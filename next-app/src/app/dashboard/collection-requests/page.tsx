@@ -64,7 +64,7 @@ export default function CollectionRequestsPage() {
       const result = await response.json()
 
       if (response.ok) {
-        setRequests(result.data)
+        setRequests(Array.isArray(result) ? result : result.data || [])
       } else {
         message.error(result.message || '収集依頼データの取得に失敗しました')
       }

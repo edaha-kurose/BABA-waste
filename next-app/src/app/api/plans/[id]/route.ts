@@ -1,21 +1,38 @@
+// ============================================================================
+// Plans API - 単一リソース
+// GET/PUT/DELETE /api/plans/:id
+// ============================================================================
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAuthenticatedUser } from '@/lib/auth/session-server'
+import { planUpdateSchema } from '@/utils/validation/common'
 import { z } from 'zod'
 
-// GET /api/plans/[id] - 予定詳細取得
+// GET /api/plans/:id
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const plan = await prisma.plans.findUnique({
-      where: { id: params.id },
+    const user = await getAuthenticatedUser(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    let plan
+    try {
+      plan = await prisma.plans.findUnique({
+      where: {
+        id: params.id,
+        org_id: user.org_id,
+        deleted_at: null,
+      },
       include: {
         organizations: {
           select: {
             id: true,
             name: true,
-            code: true,
           },
         },
         stores: {
@@ -23,92 +40,91 @@ export async function GET(
             id: true,
             store_code: true,
             name: true,
-            address: true,
-            phone: true,
           },
         },
-        collectionRequests: {
-          orderBy: { request_date: 'desc' },
+        item_maps: {
           select: {
             id: true,
-            request_date: true,
-            status: true,
-            requested_pickup_date: true,
-            confirmed_pickup_date: true,
+            item_label: true,
+            jwnet_code: true,
           },
         },
       },
-    })
-
-    if (!plan || plan.deleted_at) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Plan not found' },
-        { status: 404 }
-      )
+    });
+    } catch (dbError) {
+      console.error('[GET /api/plans/[id]] Prisma検索エラー:', dbError);
+      return NextResponse.json({ error: 'データベースエラーが発生しました' }, { status: 500 });
     }
 
-    return NextResponse.json({ data: plan })
+    if (!plan) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(plan)
   } catch (error) {
-    console.error('[API] Failed to fetch plan:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to fetch plan' },
-      { status: 500 }
-    )
+    console.error('[Plans API] GET error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// PATCH /api/plans/[id] - 予定更新
-export async function PATCH(
+// PUT /api/plans/:id
+export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const user = await getAuthenticatedUser(request)
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  let body
   try {
-    const body = await request.json()
+    body = await request.json();
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 });
+  }
 
-    // Zodでバリデーション
-    const schema = z.object({
-      planned_pickup_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: 'Invalid date format',
-      }).optional(),
-      item_name: z.string().min(1).max(255).optional(),
-      planned_quantity: z.number().positive().optional(),
-      unit: z.string().min(1).max(10).optional(),
-      area_or_city: z.string().max(100).optional(),
-      notes: z.string().optional(),
-      status: z.enum(['pending', 'approved', 'rejected', 'completed']).optional(),
-      updated_by: z.string().uuid().optional(),
-    })
+  try {
+    const validatedData = planUpdateSchema.parse(body)
 
-    const validatedData = schema.parse(body)
-
-    // 存在チェック
-    const existing = await prisma.plans.findUnique({
-      where: { id: params.id },
-    })
-
-    if (!existing || existing.deleted_at) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Plan not found' },
-        { status: 404 }
-      )
+    // 存在確認
+    let existing
+    try {
+      existing = await prisma.plans.findUnique({
+      where: {
+        id: params.id,
+        org_id: user.org_id,
+        deleted_at: null,
+      },
+    });
+    } catch (dbError) {
+      console.error('[PUT /api/plans/[id]] Prisma検索エラー:', dbError);
+      return NextResponse.json({ error: 'データベースエラーが発生しました' }, { status: 500 });
     }
 
-    // 日付変換
-    const updateData: any = { ...validatedData }
-    if (validatedData.planned_pickup_date) {
-      updateData.planned_pickup_date = new Date(validatedData.planned_pickup_date)
+    if (!existing) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     }
 
     // 更新
-    const plan = await prisma.plans.update({
+    let updated
+    try {
+      updated = await prisma.plans.update({
       where: { id: params.id },
-      data: updateData,
+      data: {
+        ...validatedData,
+        planned_date: validatedData.planned_date ? new Date(validatedData.planned_date) : undefined,
+        earliest_pickup_date: validatedData.earliest_pickup_date
+          ? new Date(validatedData.earliest_pickup_date)
+          : undefined,
+        updated_at: new Date(),
+        updated_by: user.id,
+      },
       include: {
         organizations: {
           select: {
             id: true,
             name: true,
-            code: true,
           },
         },
         stores: {
@@ -118,69 +134,76 @@ export async function PATCH(
             name: true,
           },
         },
+        item_maps: {
+          select: {
+            id: true,
+            item_label: true,
+            jwnet_code: true,
+          },
+        },
       },
-    })
+    });
+    } catch (dbError) {
+      console.error('[PUT /api/plans/[id]] Prisma更新エラー:', dbError);
+      return NextResponse.json({ error: 'データベースエラーが発生しました' }, { status: 500 });
+    }
 
-    return NextResponse.json({
-      data: plan,
-      message: 'Plan updated successfully',
-    })
+    return NextResponse.json(updated)
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation Error', details: error.errors },
+        { error: 'Validation failed', details: error.errors },
         { status: 400 }
       )
     }
 
-    console.error('[API] Failed to update plan:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to update plan' },
-      { status: 500 }
-    )
+    console.error('[Plans API] PUT error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// DELETE /api/plans/[id] - 予定削除（論理削除）
+// DELETE /api/plans/:id
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const user = await getAuthenticatedUser(request)
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // 存在確認
+  let existing
   try {
-    const searchParams = request.nextUrl.searchParams
-    const updated_by = searchParams.get('updated_by') || undefined
+    existing = await prisma.plans.findUnique({
+      where: {
+        id: params.id,
+        org_id: user.org_id,
+        deleted_at: null,
+      },
+    });
+  } catch (dbError) {
+    console.error('[DELETE /api/plans/[id]] Prisma検索エラー:', dbError);
+    return NextResponse.json({ error: 'データベースエラーが発生しました' }, { status: 500 });
+  }
 
-    // 存在チェック
-    const existing = await prisma.plans.findUnique({
-      where: { id: params.id },
-    })
+  if (!existing) {
+    return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+  }
 
-    if (!existing || existing.deleted_at) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Plan not found' },
-        { status: 404 }
-      )
-    }
-
-    // 論理削除
-    const plan = await prisma.plans.update({
+  // 論理削除
+  try {
+    await prisma.plans.update({
       where: { id: params.id },
       data: {
         deleted_at: new Date(),
-        updated_by,
+        updated_by: user.id,
       },
-    })
-
-    return NextResponse.json({
-      data: plan,
-      message: 'Plan deleted successfully',
-    })
-  } catch (error) {
-    console.error('[API] Failed to delete plan:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to delete plan' },
-      { status: 500 }
-    )
+    });
+  } catch (dbError) {
+    console.error('[DELETE /api/plans/[id]] Prisma削除エラー:', dbError);
+    return NextResponse.json({ error: 'データベースエラーが発生しました' }, { status: 500 });
   }
-}
 
+  return NextResponse.json({ message: 'Plan deleted successfully' })
+}

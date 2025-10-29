@@ -8,19 +8,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getJwnetClient } from '@/lib/jwnet/client';
 import { ManifestInquiryRequest, JwnetApiError } from '@/types/jwnet';
 import prisma from '@/lib/prisma';
+import { getAuthenticatedUser } from '@/lib/auth/session-server';
 
 export async function POST(request: NextRequest) {
-  try {
-    // リクエストボディを取得
-    const body: ManifestInquiryRequest = await request.json();
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
 
-    // バリデーション
-    if (!body.manifestNo || !body.subscriberNo) {
-      return NextResponse.json(
-        { error: 'Missing required fields: manifestNo or subscriberNo' },
-        { status: 400 }
-      );
-    }
+  let body: ManifestInquiryRequest
+  try {
+    body = await request.json();
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 });
+  }
+
+  // バリデーション
+  if (!body.manifestNo || !body.subscriberNo) {
+    return NextResponse.json(
+      { error: 'Missing required fields: manifestNo or subscriberNo' },
+      { status: 400 }
+    );
+  }
+
+  try {
 
     // JWNET API クライアントを取得
     const jwnetClient = getJwnetClient();
@@ -40,20 +51,22 @@ export async function POST(request: NextRequest) {
     }
 
     // データベースの登録情報を更新
-    const orgId = request.headers.get('x-org-id') || '';
-    
     if (response.manifestNo) {
-      await prisma.registrations.updateMany({
-        where: {
-          org_id: orgId,
-          manifest_no: response.manifestNo,
-        },
-        data: {
-          status: response.status as any,
-          response_data: response as any,
-          updated_at: new Date(),
-        },
-      });
+      try {
+        await prisma.registrations.updateMany({
+          where: {
+            org_id: authUser.org_id,
+            manifest_no: response.manifestNo,
+          },
+          data: {
+            status: response.status as any,
+            updated_at: new Date(),
+          },
+        });
+      } catch (dbError) {
+        console.error('[JWNET] DB更新エラー:', dbError);
+        // DB更新失敗してもJWNET照会結果は返す
+      }
     }
 
     return NextResponse.json(response, { status: 200 });

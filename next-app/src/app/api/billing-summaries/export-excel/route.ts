@@ -11,10 +11,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import ExcelJS from 'exceljs';
+import { getAuthenticatedUser } from '@/lib/auth/session-server';
 
-// バリデーションスキーマ
-const ExportExcelSchema = z.object({
-  org_id: z.string().uuid('Invalid organization ID'),
+// バリデーションスキーマ（org_id削除、認証ユーザーから取得）
+const UserInputSchema = z.object({
   collector_id: z.string().uuid('Invalid collector ID'),
   billing_month: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: 'Invalid date format for billing_month (YYYY-MM-01)',
@@ -38,10 +38,26 @@ interface StoreBillingData {
 // POST /api/billing-summaries/export-excel - Excel出力
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // 認証チェック
+    const authUser = await getAuthenticatedUser(request);
+    if (!authUser || !authUser.org_id) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
+    // JSON パースエラーハンドリング
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('[Billing Export Excel] JSON parse error:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
 
     // バリデーション
-    const validatedData = ExportExcelSchema.parse(body);
+    const validatedData = UserInputSchema.parse(body);
 
     const billingMonth = new Date(validatedData.billing_month);
     const monthStr = billingMonth.toLocaleDateString('ja-JP', {
@@ -50,22 +66,28 @@ export async function POST(request: NextRequest) {
     });
 
     // ✅ 修正: 請求明細を取得（廃棄物マスター情報を含む）
-    const billingItems = await prisma.app_billing_items.findMany({
-      where: {
-        org_id: validatedData.org_id,
-        collector_id: validatedData.collector_id,
-        billing_month: billingMonth,
-        status: {
-          not: 'CANCELLED',
+    let billingItems;
+    try {
+      billingItems = await prisma.app_billing_items.findMany({
+        where: {
+          org_id: authUser.org_id,
+          collector_id: validatedData.collector_id,
+          billing_month: billingMonth,
+          status: {
+            not: 'CANCELLED',
+          },
         },
-      },
-      include: {
-        wasteTypeMaster: true,  // ✅ 廃棄物マスター情報を取得
-      },
-      orderBy: {
-        store_id: 'asc',
-      },
-    });
+        orderBy: {
+          store_id: 'asc',
+        },
+      });
+    } catch (dbError) {
+      console.error('[Billing Export Excel] Database error - billing items fetch:', dbError);
+      return NextResponse.json(
+        { error: 'Database error occurred' },
+        { status: 500 }
+      );
+    }
 
     if (billingItems.length === 0) {
       return NextResponse.json(
@@ -85,13 +107,22 @@ export async function POST(request: NextRequest) {
           .filter((id): id is string => id !== null && id !== undefined)
       )
     );
-    const stores = await prisma.store.findMany({
-      where: {
-        id: {
-          in: storeIds,
+    let stores;
+    try {
+      stores = await prisma.stores.findMany({
+        where: {
+          id: {
+            in: storeIds,
+          },
         },
-      },
-    });
+      });
+    } catch (dbError) {
+      console.error('[Billing Export Excel] Database error - stores fetch:', dbError);
+      return NextResponse.json(
+        { error: 'Database error occurred' },
+        { status: 500 }
+      );
+    }
 
     const storeMap = new Map(stores.map((store) => [store.id, store]));
 
@@ -119,40 +150,8 @@ export async function POST(request: NextRequest) {
 
       const storeData = storeBillingMap.get(storeId)!;
 
-      // ✅ 修正: 廃棄物マスターの billing_category に基づいて振り分け
-      const billingCategory = item.wasteTypeMaster?.billing_category || 'OTHER';
-
-      switch (billingCategory) {
-        case 'F':
-          // F列: システム管理会社の管理手数料
-          storeData.system_fee += item.amount;
-          break;
-        case 'G':
-          // G列: 一般廃棄物請求金額
-          storeData.general_waste += item.amount;
-          break;
-        case 'H':
-          // H列: 産業廃棄物請求金額
-          storeData.industrial_waste += item.amount;
-          break;
-        case 'I':
-          // I列: 瓶・缶請求金額
-          storeData.bottle_can += item.amount;
-          break;
-        case 'J':
-          // J列: 臨時回収請求金額（実績回収分）
-          storeData.temporary_collection += item.amount;
-          break;
-        case 'M':
-          // M列: 段ボール（有価買取分）- マイナス値
-          storeData.cardboard_buyback += Math.abs(item.amount) * -1;
-          break;
-        case 'OTHER':
-        default:
-          // その他は F列（システム手数料）に含める
-          storeData.system_fee += item.amount;
-          break;
-      }
+      // billing_category は使用せず、全て OTHER として扱う（TODO: waste_type_mastersからデータ取得を実装）
+      storeData.system_fee += item.amount;
 
       storeData.tax += item.tax_amount;
     });

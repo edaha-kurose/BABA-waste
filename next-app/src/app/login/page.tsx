@@ -1,12 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Card, Form, Input, Button, message, Typography, Space } from 'antd'
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
+import { Card, Form, Input, Button, message, Typography, Space, Divider, Spin } from 'antd'
+import { UserOutlined, LockOutlined, MailOutlined, TruckOutlined } from '@ant-design/icons'
 import { createBrowserClient } from '@/lib/auth/supabase-browser'
+import NextLink from 'next/link'
 
 const { Title, Text, Link } = Typography
+
+interface Collector {
+  id: string
+  company_name: string
+  email: string
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,6 +24,28 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const [form] = Form.useForm()
+  const [collectors, setCollectors] = useState<Collector[]>([])
+  const [loadingCollectors, setLoadingCollectors] = useState(false)
+
+  // 収集業者一覧を取得
+  useEffect(() => {
+    const fetchCollectors = async () => {
+      setLoadingCollectors(true)
+      try {
+        const response = await fetch('/api/quick-login/collectors')
+        if (response.ok) {
+          const data = await response.json()
+          setCollectors(data.collectors || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch collectors:', error)
+      } finally {
+        setLoadingCollectors(false)
+      }
+    }
+
+    fetchCollectors()
+  }, [])
 
   const handleLogin = async (values: { email: string; password: string }) => {
     setLoading(true)
@@ -71,28 +100,16 @@ export default function LoginPage() {
         console.log('✅ ログイン成功:', data.user.email)
         console.log('✅ セッション取得:', data.session.access_token ? 'あり' : 'なし')
         
-        // LocalStorageを直接確認
-        const storageKeys = Object.keys(localStorage).filter(key => key.startsWith('sb-'))
-        console.log('📦 LocalStorage keys:', storageKeys)
-        
         message.success(`${email} でログインしました`)
         
-        // セッション保存を待機
+        // セッション保存を待機（Supabaseがクッキーに書き込むまで）
         console.log('⏳ セッション保存待機中...')
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // 再度確認
-        const storageKeysAfter = Object.keys(localStorage).filter(key => key.startsWith('sb-'))
-        console.log('📦 LocalStorage keys (after wait):', storageKeysAfter)
+        await new Promise(resolve => setTimeout(resolve, 1500))
         
         console.log('🚀 リダイレクト実行:', redirectTo)
-        console.log('🚀 現在のURL:', window.location.href)
         
-        // 絶対URLで確実にリダイレクト
-        const targetUrl = `${window.location.origin}${redirectTo}`
-        console.log('🚀 ターゲットURL:', targetUrl)
-        
-        window.location.href = targetUrl
+        // ページ全体をリロードして、サーバーサイドでセッションを確実に読み込む
+        window.location.href = redirectTo
       } else {
         console.warn('⚠️ data.userまたはdata.sessionが存在しません')
       }
@@ -143,7 +160,7 @@ export default function LoginPage() {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #1a3d2e 0%, #2d8659 50%, #52c41a 100%)',
         padding: '20px',
       }}
     >
@@ -151,15 +168,29 @@ export default function LoginPage() {
         style={{
           width: '100%',
           maxWidth: 400,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          boxShadow: '0 8px 24px rgba(45, 134, 89, 0.3)',
+          borderRadius: '12px',
         }}
       >
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title level={2} style={{ marginBottom: 8 }}>
-            🗑️ BABA Waste
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Title level={2} style={{ 
+            marginBottom: 4, 
+            color: '#2d8659',
+            letterSpacing: '2px',
+            fontWeight: 700
+          }}>
+            BABAICHI
           </Title>
-          <Text type="secondary">
-            {isSignUp ? 'アカウント作成' : '廃棄物管理システム'}
+          <Text style={{ 
+            fontSize: 16, 
+            color: '#666',
+            display: 'block',
+            marginBottom: 8
+          }}>
+            廃棄物管理システム
+          </Text>
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            {isSignUp ? 'アカウント作成' : '循環型社会の実現'}
           </Text>
         </div>
 
@@ -278,10 +309,19 @@ export default function LoginPage() {
         {!isSignUp && (
           <Card
             size="small"
-            style={{ marginTop: 16, backgroundColor: '#fff9e6', borderColor: '#ffd666' }}
+            style={{ 
+              marginTop: 16, 
+              backgroundColor: '#f6ffed', 
+              borderColor: '#b7eb8f',
+              borderRadius: '8px'
+            }}
           >
-            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
               <strong>🚀 クイックログイン（テスト用）</strong>
+            </Text>
+            
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6, color: '#666' }}>
+              システム管理会社:
             </Text>
             <Space direction="vertical" style={{ width: '100%' }} size="small">
               <Button
@@ -289,29 +329,97 @@ export default function LoginPage() {
                 block
                 onClick={() => handleQuickLogin('admin@test.com')}
                 loading={loading}
-                style={{ backgroundColor: '#e6f7ff', borderColor: '#91d5ff' }}
+                style={{ 
+                  backgroundColor: '#d9f7be', 
+                  borderColor: '#95de64',
+                  color: '#2d8659',
+                  fontWeight: 500
+                }}
               >
-                👤 管理者でログイン (admin@test.com)
-              </Button>
-              <Button
-                size="small"
-                block
-                onClick={() => handleQuickLogin('collector@test.com')}
-                loading={loading}
-                style={{ backgroundColor: '#f0f5ff', borderColor: '#adc6ff' }}
-              >
-                👥 収集業者でログイン (collector@test.com)
-              </Button>
-              <Button
-                size="small"
-                block
-                onClick={() => handleQuickLogin('emitter@test.com')}
-                loading={loading}
-                style={{ backgroundColor: '#f0f5ff', borderColor: '#adc6ff' }}
-              >
-                🏭 排出事業者でログイン (emitter@test.com)
+                👤 BABA株式会社でログイン（システム管理会社）
               </Button>
             </Space>
+
+            <Divider style={{ margin: '12px 0' }} />
+
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6, color: '#666' }}>
+              マルチテナントA:
+            </Text>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <Button
+                size="small"
+                block
+                onClick={() => handleQuickLogin('admin@cosmos-drug.test')}
+                loading={loading}
+                style={{ 
+                  backgroundColor: '#e6f7ff', 
+                  borderColor: '#91d5ff',
+                  color: '#096dd9',
+                  fontWeight: 500
+                }}
+              >
+                🏥 コスモス薬品でログイン
+              </Button>
+            </Space>
+
+            <Divider style={{ margin: '12px 0' }} />
+
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6, color: '#666' }}>
+              マルチテナントB:
+            </Text>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <Button
+                size="small"
+                block
+                onClick={() => handleQuickLogin('admin@rakuichi.test')}
+                loading={loading}
+                style={{ 
+                  backgroundColor: '#fff7e6', 
+                  borderColor: '#ffd591',
+                  color: '#d46b08',
+                  fontWeight: 500
+                }}
+              >
+                🏪 楽市楽座でログイン
+              </Button>
+            </Space>
+
+            <Divider style={{ margin: '12px 0' }} />
+
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6, color: '#666' }}>
+              収集業者:
+            </Text>
+            {loadingCollectors ? (
+              <div style={{ textAlign: 'center', padding: '12px 0' }}>
+                <Spin size="small" />
+              </div>
+            ) : collectors.length > 0 ? (
+              <Space direction="vertical" style={{ width: '100%' }} size="small">
+                {collectors.map((collector) => (
+                  <Button
+                    key={collector.id}
+                    size="small"
+                    block
+                    onClick={() => handleQuickLogin(collector.email)}
+                    loading={loading}
+                    style={{ 
+                      backgroundColor: '#fff1f0', 
+                      borderColor: '#ffccc7',
+                      color: '#cf1322',
+                      fontWeight: 500,
+                      textAlign: 'left'
+                    }}
+                    icon={<TruckOutlined />}
+                  >
+                    {collector.company_name}
+                  </Button>
+                ))}
+              </Space>
+            ) : (
+              <Text type="secondary" style={{ fontSize: 11, display: 'block', color: '#999' }}>
+                収集業者が登録されていません
+              </Text>
+            )}
           </Card>
         )}
       </Card>

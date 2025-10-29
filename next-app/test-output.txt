@@ -1,0 +1,612 @@
+
+> baba-waste-nextjs@0.1.0 test:e2e C:\Users\kuros\Documents\GitHub\BABA-waste\next-app
+> playwright test "tests/e2e/mass-hearings.spec.ts" "--project=chromium" "--reporter=list"
+
+
+Running 10 tests using 4 workers
+
+(node:23696) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36136) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13268) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30232) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23696) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36136) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13268) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30232) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   1 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:21:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ逕ｻ髱｢縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪ｋ (19.2s)
+  x   2 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:72:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 讌ｭ閠・・ 窶ｺ 讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ (19.2s)
+  x   4 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:29:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ (19.1s)
+  x   3 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:62:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 螟夜Κ蠎苓・繧堤ｮ｡逅・〒縺阪ｋ (19.1s)
+(node:33456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:26948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34572) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:26948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34572) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   5 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:21:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ逕ｻ髱｢縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪ｋ (retry #1) (20.4s)
+  x   6 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:72:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 讌ｭ閠・・ 窶ｺ 讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ (retry #1) (20.3s)
+  x   8 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:62:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 螟夜Κ蠎苓・繧堤ｮ｡逅・〒縺阪ｋ (retry #1) (20.3s)
+  x   7 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:29:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ (retry #1) (20.4s)
+(node:23240) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:25552) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23240) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:25552) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 10 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:105:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - API邨ｱ蜷医ユ繧ｹ繝・窶ｺ API繧ｨ繝ｳ繝峨・繧､繝ｳ繝医′豁｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・(6.7s)
+  x   9 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:80:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 讌ｭ閠・・ 窶ｺ 讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ (20.5s)
+  x  12 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:135:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ 窶ｺ 辟｡蜉ｹ縺ｪ譌･莉倡ｯ・峇縺ｧ繧ｨ繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・(20.4s)
+  x  11 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:118:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ 窶ｺ 蠢・磯・岼縺梧悴蜈･蜉帙・蝣ｴ蜷医お繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・(20.6s)
+(node:30924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:26316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3220) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:26316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3220) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  13 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:161:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ 窶ｺ 繝｢繝舌う繝ｫ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・(18.8s)
+(node:33496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  16 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:118:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ 窶ｺ 蠢・磯・岼縺梧悴蜈･蜉帙・蝣ｴ蜷医お繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・(retry #1) (21.9s)
+  x  14 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:80:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 讌ｭ閠・・ 窶ｺ 讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ (retry #1) (22.0s)
+  x  15 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:135:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ 窶ｺ 辟｡蜉ｹ縺ｪ譌･莉倡ｯ・峇縺ｧ繧ｨ繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・(retry #1) (22.1s)
+(node:36024) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36024) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  17 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:161:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ 窶ｺ 繝｢繝舌う繝ｫ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・(retry #1) (20.1s)
+  x  18 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:172:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ 窶ｺ 繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・(18.8s)
+(node:1356) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1356) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  19 [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:172:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ 窶ｺ 繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・(retry #1) (19.5s)
+
+
+  1) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:21:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ逕ｻ髱｢縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪ｋ 笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })[22m
+
+
+      24 |
+      25 |     // 繝壹・繧ｸ繧ｿ繧､繝医Ν遒ｺ隱搾ｼ亥ｮ滄圀縺ｮDOM讒矩縺ｫ蜷医ｏ縺帙ｋ・・    > 26 |     await expect(page.getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })).toBeVisible({ timeout: 10000 })
+         |                                                                    ^
+      27 |   })
+      28 |
+      29 |   test('譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ', async ({ page }) => {
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:26:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ逕ｻ髱｢縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪ｋ-chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })[22m
+
+
+      24 |
+      25 |     // 繝壹・繧ｸ繧ｿ繧､繝医Ν遒ｺ隱搾ｼ亥ｮ滄圀縺ｮDOM讒矩縺ｫ蜷医ｏ縺帙ｋ・・    > 26 |     await expect(page.getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })).toBeVisible({ timeout: 10000 })
+         |                                                                    ^
+      27 |   })
+      28 |
+      29 |   test('譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ', async ({ page }) => {
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:26:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ逕ｻ髱｢縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪ｋ-chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ逕ｻ髱｢縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪ｋ-chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ逕ｻ髱｢縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪ｋ-chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  2) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:29:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ 笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })[22m
+
+
+      32 |
+      33 |     // 繝壹・繧ｸ縺瑚ｪｭ縺ｿ霎ｼ縺ｾ繧後◆縺薙→繧堤｢ｺ隱・    > 34 |     await expect(page.getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })).toBeVisible({ timeout: 10000 })
+         |                                                                    ^
+      35 |
+      36 |     // 繝輔か繝ｼ繝蜈･蜉幢ｼ・etByLabel繧剃ｽｿ逕ｨ・・      37 |     await page.getByLabel(/繧ｿ繧､繝医Ν/).fill(`E2E繝・せ繝医ヲ繧｢繝ｪ繝ｳ繧ｰ_${Date.now()}`)
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:34:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ-chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })[22m
+
+
+      32 |
+      33 |     // 繝壹・繧ｸ縺瑚ｪｭ縺ｿ霎ｼ縺ｾ繧後◆縺薙→繧堤｢ｺ隱・    > 34 |     await expect(page.getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })).toBeVisible({ timeout: 10000 })
+         |                                                                    ^
+      35 |
+      36 |     // 繝輔か繝ｼ繝蜈･蜉幢ｼ・etByLabel繧剃ｽｿ逕ｨ・・      37 |     await page.getByLabel(/繧ｿ繧､繝医Ν/).fill(`E2E繝・せ繝医ヲ繧｢繝ｪ繝ｳ繧ｰ_${Date.now()}`)
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:34:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ-chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ-chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ-chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  3) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:62:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 螟夜Κ蠎苓・繧堤ｮ｡逅・〒縺阪ｋ 笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '螟夜Κ蠎苓・邂｡逅・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '螟夜Κ蠎苓・邂｡逅・ })[22m
+
+
+      65 |
+      66 |     // 繝壹・繧ｸ繧ｿ繧､繝医Ν遒ｺ隱・    > 67 |     await expect(page.getByRole('heading', { name: '螟夜Κ蠎苓・邂｡逅・ })).toBeVisible({ timeout: 10000 })
+         |                                                                 ^
+      68 |   })
+      69 | })
+      70 |
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:67:65
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-螟夜Κ蠎苓・繧堤ｮ｡逅・〒縺阪ｋ-chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '螟夜Κ蠎苓・邂｡逅・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '螟夜Κ蠎苓・邂｡逅・ })[22m
+
+
+      65 |
+      66 |     // 繝壹・繧ｸ繧ｿ繧､繝医Ν遒ｺ隱・    > 67 |     await expect(page.getByRole('heading', { name: '螟夜Κ蠎苓・邂｡逅・ })).toBeVisible({ timeout: 10000 })
+         |                                                                 ^
+      68 |   })
+      69 | })
+      70 |
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:67:65
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-螟夜Κ蠎苓・繧堤ｮ｡逅・〒縺阪ｋ-chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-螟夜Κ蠎苓・繧堤ｮ｡逅・〒縺阪ｋ-chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---邂｡逅・・・-螟夜Κ蠎苓・繧堤ｮ｡逅・〒縺阪ｋ-chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  4) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:72:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 讌ｭ閠・・ 窶ｺ 讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ 笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })[22m
+
+
+      75 |
+      76 |     // 繝壹・繧ｸ繧ｿ繧､繝医Ν縺ｾ縺溘・繝倥ャ繝繝ｼ遒ｺ隱・    > 77 |     await expect(page.getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })).toBeVisible({ timeout: 10000 })
+         |                                                                  ^
+      78 |   })
+      79 |
+      80 |   test('讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ', async ({ page }) => {
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:77:66
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---讌ｭ閠・・-讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ-chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })[22m
+
+
+      75 |
+      76 |     // 繝壹・繧ｸ繧ｿ繧､繝医Ν縺ｾ縺溘・繝倥ャ繝繝ｼ遒ｺ隱・    > 77 |     await expect(page.getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })).toBeVisible({ timeout: 10000 })
+         |                                                                  ^
+      78 |   })
+      79 |
+      80 |   test('讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ', async ({ page }) => {
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:77:66
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---讌ｭ閠・・-讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ-chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---讌ｭ閠・・-讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ-chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---讌ｭ閠・・-讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ-chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  5) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:80:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 讌ｭ閠・・ 窶ｺ 讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ 笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })[22m
+
+
+      84 |
+      85 |     // 繝壹・繧ｸ縺瑚ｪｭ縺ｿ霎ｼ縺ｾ繧後◆縺薙→繧堤｢ｺ隱・    > 86 |     await expect(page.getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })).toBeVisible({ timeout: 10000 })
+         |                                                                  ^
+      87 |
+      88 |     // 蝗樒ｭ斐・繧ｿ繝ｳ縺悟ｭ伜惠縺吶ｋ蝣ｴ蜷医√け繝ｪ繝・け
+      89 |     const respondButton = page.getByRole('link', { name: '蝗樒ｭ斐☆繧・ }).first()
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:86:66
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---讌ｭ閠・・-讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ-chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })[22m
+
+
+      84 |
+      85 |     // 繝壹・繧ｸ縺瑚ｪｭ縺ｿ霎ｼ縺ｾ繧後◆縺薙→繧堤｢ｺ隱・    > 86 |     await expect(page.getByRole('heading', { name: '繝偵い繝ｪ繝ｳ繧ｰ蝗樒ｭ・ })).toBeVisible({ timeout: 10000 })
+         |                                                                  ^
+      87 |
+      88 |     // 蝗樒ｭ斐・繧ｿ繝ｳ縺悟ｭ伜惠縺吶ｋ蝣ｴ蜷医√け繝ｪ繝・け
+      89 |     const respondButton = page.getByRole('link', { name: '蝗樒ｭ斐☆繧・ }).first()
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:86:66
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---讌ｭ閠・・-讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ-chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---讌ｭ閠・・-讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ-chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---讌ｭ閠・・-讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ-chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  6) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:118:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ 窶ｺ 蠢・磯・岼縺梧悴蜈･蜉帙・蝣ｴ蜷医お繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })[22m
+
+
+      121 |
+      122 |     // 繝壹・繧ｸ縺瑚ｪｭ縺ｿ霎ｼ縺ｾ繧後◆縺薙→繧堤｢ｺ隱・    > 123 |     await expect(page.getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })).toBeVisible({ timeout: 10000 })
+          |                                                                    ^
+      124 |
+      125 |     // 菴輔ｂ蜈･蜉帙○縺壹↓菫晏ｭ倥・繧ｿ繝ｳ繧偵け繝ｪ繝・け
+      126 |     const saveButton = page.getByRole('button', { name: /菴懈・/ })
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:123:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ-蠢・磯・岼縺梧悴蜈･蜉帙・蝣ｴ蜷医お繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })[22m
+
+
+      121 |
+      122 |     // 繝壹・繧ｸ縺瑚ｪｭ縺ｿ霎ｼ縺ｾ繧後◆縺薙→繧堤｢ｺ隱・    > 123 |     await expect(page.getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })).toBeVisible({ timeout: 10000 })
+          |                                                                    ^
+      124 |
+      125 |     // 菴輔ｂ蜈･蜉帙○縺壹↓菫晏ｭ倥・繧ｿ繝ｳ繧偵け繝ｪ繝・け
+      126 |     const saveButton = page.getByRole('button', { name: /菴懈・/ })
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:123:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ-蠢・磯・岼縺梧悴蜈･蜉帙・蝣ｴ蜷医お繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ-蠢・磯・岼縺梧悴蜈･蜉帙・蝣ｴ蜷医お繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ-蠢・磯・岼縺梧悴蜈･蜉帙・蝣ｴ蜷医お繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  7) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:135:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ 窶ｺ 辟｡蜉ｹ縺ｪ譌･莉倡ｯ・峇縺ｧ繧ｨ繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })[22m
+
+
+      138 |
+      139 |     // 繝壹・繧ｸ縺瑚ｪｭ縺ｿ霎ｼ縺ｾ繧後◆縺薙→繧堤｢ｺ隱・    > 140 |     await expect(page.getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })).toBeVisible({ timeout: 10000 })
+          |                                                                    ^
+      141 |
+      142 |     // 繧ｿ繧､繝医Ν蜈･蜉・      143 |     await page.getByLabel(/繧ｿ繧､繝医Ν/).fill('辟｡蜉ｹ縺ｪ譌･莉倥ユ繧ｹ繝・)
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:140:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ-辟｡蜉ｹ縺ｪ譌･莉倡ｯ・峇縺ｧ繧ｨ繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })[22m
+
+
+      138 |
+      139 |     // 繝壹・繧ｸ縺瑚ｪｭ縺ｿ霎ｼ縺ｾ繧後◆縺薙→繧堤｢ｺ隱・    > 140 |     await expect(page.getByRole('heading', { name: '譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ菴懈・' })).toBeVisible({ timeout: 10000 })
+          |                                                                    ^
+      141 |
+      142 |     // 繧ｿ繧､繝医Ν蜈･蜉・      143 |     await page.getByLabel(/繧ｿ繧､繝医Ν/).fill('辟｡蜉ｹ縺ｪ譌･莉倥ユ繧ｹ繝・)
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:140:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ-辟｡蜉ｹ縺ｪ譌･莉倡ｯ・峇縺ｧ繧ｨ繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ-辟｡蜉ｹ縺ｪ譌･莉倡ｯ・峇縺ｧ繧ｨ繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ-辟｡蜉ｹ縺ｪ譌･莉倡ｯ・峇縺ｧ繧ｨ繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  8) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:161:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ 窶ｺ 繝｢繝舌う繝ｫ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })[22m
+
+
+      167 |
+      168 |     // 繝壹・繧ｸ縺瑚｡ｨ遉ｺ縺輔ｌ繧九％縺ｨ繧堤｢ｺ隱・    > 169 |     await expect(page.getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })).toBeVisible({ timeout: 10000 })
+          |                                                                    ^
+      170 |   })
+      171 |
+      172 |   test('繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・, async ({ page }) => {
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:169:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ-繝｢繝舌う繝ｫ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })[22m
+
+
+      167 |
+      168 |     // 繝壹・繧ｸ縺瑚｡ｨ遉ｺ縺輔ｌ繧九％縺ｨ繧堤｢ｺ隱・    > 169 |     await expect(page.getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })).toBeVisible({ timeout: 10000 })
+          |                                                                    ^
+      170 |   })
+      171 |
+      172 |   test('繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・, async ({ page }) => {
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:169:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ-繝｢繝舌う繝ｫ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ-繝｢繝舌う繝ｫ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ-繝｢繝舌う繝ｫ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  9) [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:172:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ 窶ｺ 繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })[22m
+
+
+      178 |
+      179 |     // 繝壹・繧ｸ縺瑚｡ｨ遉ｺ縺輔ｌ繧九％縺ｨ繧堤｢ｺ隱・    > 180 |     await expect(page.getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })).toBeVisible({ timeout: 10000 })
+          |                                                                    ^
+      181 |   })
+      182 | })
+      183 |
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:180:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ-繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・chromium\error-context.md
+
+    Retry #1 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })[22m
+
+
+      178 |
+      179 |     // 繝壹・繧ｸ縺瑚｡ｨ遉ｺ縺輔ｌ繧九％縺ｨ繧堤｢ｺ隱・    > 180 |     await expect(page.getByRole('heading', { name: '荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ邂｡逅・ })).toBeVisible({ timeout: 10000 })
+          |                                                                    ^
+      181 |   })
+      182 | })
+      183 |
+        at C:\Users\kuros\Documents\GitHub\BABA-waste\next-app\tests\e2e\mass-hearings.spec.ts:180:68
+
+    Error Context: test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ-繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・chromium-retry1\error-context.md
+
+    attachment #2: trace (application/zip) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ-繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・chromium-retry1\trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results\mass-hearings-荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・---繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ-繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・chromium-retry1\trace.zip
+
+    笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+
+  9 failed
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:21:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ逕ｻ髱｢縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪ｋ 笏笏笏笏笏笏笏
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:29:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 譁ｰ隕上ヲ繧｢繝ｪ繝ｳ繧ｰ繧剃ｽ懈・縺ｧ縺阪ｋ 笏笏笏笏笏笏笏笏笏笏笏
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:62:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 邂｡逅・・・ 窶ｺ 螟夜Κ蠎苓・繧堤ｮ｡逅・〒縺阪ｋ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:72:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 讌ｭ閠・・ 窶ｺ 讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ荳隕ｧ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ 笏笏笏笏笏笏笏笏笏
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:80:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 讌ｭ閠・・ 窶ｺ 讌ｭ閠・・繝偵い繝ｪ繝ｳ繧ｰ隧ｳ邏ｰ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ 笏笏笏笏笏笏笏笏笏
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:118:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ 窶ｺ 蠢・磯・岼縺梧悴蜈･蜉帙・蝣ｴ蜷医お繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:135:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ 窶ｺ 辟｡蜉ｹ縺ｪ譌･莉倡ｯ・峇縺ｧ繧ｨ繝ｩ繝ｼ縺瑚｡ｨ遉ｺ縺輔ｌ繧・笏
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:161:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ 窶ｺ 繝｢繝舌う繝ｫ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・笏笏
+    [chromium] 窶ｺ tests\e2e\mass-hearings.spec.ts:172:7 窶ｺ 荳譁峨ヲ繧｢繝ｪ繝ｳ繧ｰ讖溯・ - 繝ｬ繧ｹ繝昴Φ繧ｷ繝悶ョ繧ｶ繧､繝ｳ 窶ｺ 繧ｿ繝悶Ξ繝・ヨ陦ｨ遉ｺ縺ｧ繧よｭ｣蟶ｸ縺ｫ蜍穂ｽ懊☆繧・笏
+  1 passed (2.2m)
+窶右LIFECYCLE窶・Command failed with exit code 1.

@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { getAuthenticatedUser } from '@/lib/auth/session-server'
 
 // GET /api/collection-requests/[id] - 収集依頼詳細取得
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  let collectionRequest
   try {
-    const collectionRequest = await prisma.collection_requests.findUnique({
+    collectionRequest = await prisma.collection_requests.findUnique({
       where: { id: params.id },
       include: {
         organizations: {
@@ -24,48 +31,43 @@ export async function GET(
             store_code: true,
             name: true,
             address: true,
-            phone: true,
-          },
-        },
-        plan: {
-          select: {
-            id: true,
-            item_name: true,
-            planned_quantity: true,
-            unit: true,
-            planned_pickup_date: true,
           },
         },
         collections: {
           orderBy: { collected_at: 'desc' },
           select: {
             id: true,
-            status: true,
-            actual_pickup_date: true,
-            actual_pickup_time: true,
-            actual_quantity: true,
-            quantity: true,
-            unit: true,
+            collected_at: true,
+            actual_qty: true,
+            actual_unit: true,
           },
         },
       },
-    })
-
-    if (!collectionRequest ) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Collection request not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json({ data: collectionRequest })
-  } catch (error) {
-    console.error('[API] Failed to fetch collection request:', error)
+    });
+  } catch (dbError) {
+    console.error('[GET /api/collection-requests/[id]] Prisma検索エラー:', dbError);
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to fetch collection request' },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
+    );
+  }
+
+  if (!collectionRequest) {
+    return NextResponse.json(
+      { error: 'Not Found', message: 'Collection request not found' },
+      { status: 404 }
     )
   }
+
+  // 権限チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(collectionRequest.org_id)) {
+    return NextResponse.json(
+      { error: 'この収集依頼を閲覧する権限がありません' },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json({ data: collectionRequest })
 }
 
 // PATCH /api/collection-requests/[id] - 収集依頼更新
@@ -73,8 +75,19 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  let body
   try {
-    const body = await request.json()
+    body = await request.json();
+  } catch (parseError) {
+    return NextResponse.json({ error: '不正なJSONフォーマットです' }, { status: 400 });
+  }
+
+  try {
 
     // Zodでバリデーション
     const schema = z.object({
@@ -93,15 +106,32 @@ export async function PATCH(
     const validatedData = schema.parse(body)
 
     // 存在チェック
-    const existing = await prisma.collection_requests.findUnique({
-      where: { id: params.id },
-    })
+    let existing
+    try {
+      existing = await prisma.collection_requests.findUnique({
+        where: { id: params.id },
+      });
+    } catch (dbError) {
+      console.error('[PATCH /api/collection-requests/[id]] Prisma検索エラー:', dbError);
+      return NextResponse.json(
+        { error: 'データベースエラーが発生しました' },
+        { status: 500 }
+      );
+    }
 
-    if (!existing ) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Collection request not found' },
         { status: 404 }
       )
+    }
+
+    // 権限チェック
+    if (!authUser.isSystemAdmin && !authUser.org_ids.includes(existing.org_id)) {
+      return NextResponse.json(
+        { error: 'この収集依頼を更新する権限がありません' },
+        { status: 403 }
+      );
     }
 
     // 日付変換
@@ -119,7 +149,9 @@ export async function PATCH(
     }
 
     // 更新
-    const collectionRequest = await prisma.collection_requests.update({
+    let collectionRequest
+    try {
+      collectionRequest = await prisma.collection_requests.update({
       where: { id: params.id },
       data: updateData,
       include: {
@@ -137,14 +169,15 @@ export async function PATCH(
             name: true,
           },
         },
-        plan: {
-          select: {
-            id: true,
-            item_name: true,
-          },
-        },
       },
-    })
+    });
+    } catch (dbError) {
+      console.error('[PATCH /api/collection-requests/[id]] Prisma更新エラー:', dbError);
+      return NextResponse.json(
+        { error: 'データベースエラーが発生しました' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       data: collectionRequest,
@@ -171,41 +204,55 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  // 存在チェック
+  let existing
   try {
-    const searchParams = request.nextUrl.searchParams
-    const updated_by = searchParams.get('updated_by') || undefined
-
-    // 存在チェック
-    const existing = await prisma.collection_requests.findUnique({
+    existing = await prisma.collection_requests.findUnique({
       where: { id: params.id },
-    })
-
-    if (!existing ) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Collection request not found' },
-        { status: 404 }
-      )
-    }
-
-    // 論理削除
-    const collectionRequest = await prisma.collection_requests.update({
-      where: { id: params.id },
-      data: {
-        deleted_at: new Date(),
-        updated_by,
-      },
-    })
-
-    return NextResponse.json({
-      data: collectionRequest,
-      message: 'Collection request deleted successfully',
-    })
-  } catch (error) {
-    console.error('[API] Failed to delete collection request:', error)
+    });
+  } catch (dbError) {
+    console.error('[DELETE /api/collection-requests/[id]] Prisma検索エラー:', dbError);
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'Failed to delete collection request' },
+      { error: 'データベースエラーが発生しました' },
       { status: 500 }
+    );
+  }
+
+  if (!existing) {
+    return NextResponse.json(
+      { error: 'Not Found', message: 'Collection request not found' },
+      { status: 404 }
     )
   }
+
+  // 権限チェック
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(existing.org_id)) {
+    return NextResponse.json(
+      { error: 'この収集依頼を削除する権限がありません' },
+      { status: 403 }
+    );
+  }
+
+  // 物理削除（deleted_atフィールドがないため）
+  try {
+    await prisma.collection_requests.delete({
+      where: { id: params.id },
+    });
+  } catch (dbError) {
+    console.error('[DELETE /api/collection-requests/[id]] Prisma削除エラー:', dbError);
+    return NextResponse.json(
+      { error: 'データベースエラーが発生しました' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    message: 'Collection request deleted successfully',
+  })
 }
 

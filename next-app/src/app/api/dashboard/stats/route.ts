@@ -10,8 +10,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import prisma from '@/lib/prisma'
-import { createServerClient } from '@/lib/auth/supabase-server'
+import { prisma } from '@/lib/prisma'
+import { getAuthenticatedUser } from '@/lib/auth/session-server'
 
 // レスポンススキーマ
 const DashboardStatsSchema = z.object({
@@ -20,6 +20,12 @@ const DashboardStatsSchema = z.object({
   pendingCollectionsCount: z.number().int().describe('回収予定件数'),
   completedCollectionsCount: z.number().int().describe('完了した回収件数'),
   currentMonth: z.string().describe('集計対象月 (YYYY-MM)'),
+  // 初期設定チェック用
+  collectorsCount: z.number().int().describe('収集業者数'),
+  itemMapsCount: z.number().int().describe('廃棄品目数'),
+  matrixCount: z.number().int().describe('店舗×品目×業者マトリクス登録数'),
+  billingItemsCount: z.number().int().describe('請求単価設定数'),
+  jwnetConfigured: z.boolean().describe('JWNET設定済みフラグ'),
 })
 
 export type DashboardStats = z.infer<typeof DashboardStatsSchema>
@@ -30,28 +36,20 @@ export type DashboardStats = z.infer<typeof DashboardStatsSchema>
  */
 export async function GET(request: NextRequest) {
   try {
-    // ローカル環境では認証チェックをスキップ
-    const isLocal = request.url.includes('localhost') || request.url.includes('127.0.0.1')
+    console.log('[Dashboard Stats API] リクエスト受信')
     
-    if (!isLocal) {
-      // 認証チェック（本番環境のみ）
-      const supabase = await createServerClient()
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
-
-      if (authError || !user) {
-        return NextResponse.json(
-          { error: 'Unauthorized', message: 'ログインが必要です' },
-          { status: 401 }
-        )
-      }
-
-      console.log('[Dashboard Stats API] ユーザー認証OK:', user.email)
-    } else {
-      console.log('[Dashboard Stats API] ローカル環境 - 認証スキップ')
+    // 認証チェック（E2Eバイパス対応）
+    const authUser = await getAuthenticatedUser(request)
+    
+    if (!authUser) {
+      console.error('[Dashboard Stats API] 認証失敗: ユーザーが見つかりません')
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'ログインが必要です' },
+        { status: 401 }
+      )
     }
+
+    console.log('[Dashboard Stats API] ユーザー認証OK:', authUser.email)
 
     // 今月の開始日・終了日を取得
     const now = new Date()
@@ -99,6 +97,57 @@ export async function GET(request: NextRequest) {
 
     console.log('[Dashboard Stats API] 完了回収件数:', completedCollectionsCount)
 
+    // 5. 収集業者数（初期設定チェック用）
+    const collectorsCount = await prisma.collectors.count({
+      where: {
+        deleted_at: null,
+      },
+    })
+
+    console.log('[Dashboard Stats API] 収集業者数:', collectorsCount)
+
+    // 6. 廃棄品目数（初期設定チェック用）
+    const itemMapsCount = await prisma.item_maps.count({
+      where: {
+        deleted_at: null,
+      },
+    })
+
+    console.log('[Dashboard Stats API] 廃棄品目数:', itemMapsCount)
+
+    // 7. 店舗×品目×業者マトリクス登録数（初期設定チェック用）
+    const matrixCount = await prisma.store_item_collectors.count({
+      where: {
+        deleted_at: null,
+      },
+    })
+
+    console.log('[Dashboard Stats API] マトリクス登録数:', matrixCount)
+
+    // 8. 請求単価設定数（初期設定チェック用）
+    const billingItemsCount = await prisma.public_billing_items.count({
+      where: {
+        deleted_at: null,
+      },
+    })
+
+    console.log('[Dashboard Stats API] 請求単価設定数:', billingItemsCount)
+
+    // 9. JWNET設定済みチェック（初期設定チェック用）
+    const jwnetConfiguredOrgs = await prisma.organizations.count({
+      where: {
+        AND: [
+          { jwnet_subscriber_id: { not: null } },
+          { jwnet_subscriber_id: { not: '' } },
+          { deleted_at: null },
+        ],
+      },
+    })
+
+    const jwnetConfigured = jwnetConfiguredOrgs > 0
+
+    console.log('[Dashboard Stats API] JWNET設定済み:', jwnetConfigured)
+
     // レスポンスデータの構築とバリデーション
     const stats: DashboardStats = {
       totalBillingAmount,
@@ -106,6 +155,11 @@ export async function GET(request: NextRequest) {
       pendingCollectionsCount,
       completedCollectionsCount,
       currentMonth: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
+      collectorsCount,
+      itemMapsCount,
+      matrixCount,
+      billingItemsCount,
+      jwnetConfigured,
     }
 
     // Zodバリデーション

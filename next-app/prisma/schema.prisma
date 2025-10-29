@@ -88,38 +88,49 @@ model audit_logs {
 }
 
 model app_billing_items {
-  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  org_id                String    @db.Uuid
-  collector_id          String    @db.Uuid
-  store_id              String?   @db.Uuid
-  collection_id         String?   @db.Uuid
-  billing_month         DateTime  @db.Date
-  billing_period_from   DateTime  @db.Date
-  billing_period_to     DateTime  @db.Date
-  billing_type          String    @db.VarChar(50)
-  item_name             String    @db.VarChar(255)
-  item_code             String?   @db.VarChar(50)
-  waste_type_id         String?   @db.Uuid
-  unit_price            Float?    @db.Real
-  quantity              Float?    @db.Real
-  unit                  String?   @db.VarChar(10)
-  amount                Float     @db.Real
-  tax_rate              Float     @default(0.10) @db.Real
-  tax_amount            Float     @db.Real
-  total_amount          Float     @db.Real
-  jwnet_registration_id String?   @db.VarChar(255)
-  jwnet_manifest_no     String?   @db.VarChar(50)
-  status                String    @default("DRAFT") @db.VarChar(50)
-  submitted_at          DateTime? @db.Timestamptz(6)
-  approved_at           DateTime? @db.Timestamptz(6)
-  approved_by           String?   @db.Uuid
-  paid_at               DateTime? @db.Timestamptz(6)
+  id                    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                String              @db.Uuid
+  collector_id          String              @db.Uuid
+  store_id              String?             @db.Uuid
+  collection_id         String?             @db.Uuid
+  billing_month         DateTime            @db.Date
+  billing_period_from   DateTime            @db.Date
+  billing_period_to     DateTime            @db.Date
+  billing_type          String              @db.VarChar(50)
+  item_name             String              @db.VarChar(255)
+  item_code             String?             @db.VarChar(50)
+  waste_type_id         String?             @db.Uuid
+  unit_price            Float?              @db.Real
+  quantity              Float?              @db.Real
+  unit                  String?             @db.VarChar(10)
+  amount                Float               @db.Real
+  tax_rate              Float               @default(0.10) @db.Real
+  tax_amount            Float               @db.Real
+  total_amount          Float               @db.Real
+  jwnet_registration_id String?             @db.VarChar(255)
+  jwnet_manifest_no     String?             @db.VarChar(50)
+  status                String              @default("DRAFT") @db.VarChar(50)
+  submitted_at          DateTime?           @db.Timestamptz(6)
+  approved_at           DateTime?           @db.Timestamptz(6)
+  approved_by           String?             @db.Uuid
+  paid_at               DateTime?           @db.Timestamptz(6)
   notes                 String?
-  created_at            DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime  @default(now()) @db.Timestamptz(6)
-  created_by            String?   @db.Uuid
-  updated_by            String?   @db.Uuid
-  deleted_at            DateTime? @db.Timestamptz(6)
+  created_at            DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime            @default(now()) @db.Timestamptz(6)
+  created_by            String?             @db.Uuid
+  updated_by            String?             @db.Uuid
+  deleted_at            DateTime?           @db.Timestamptz(6)
+  commission_type       String?             @db.VarChar(20)
+  commission_rate       Float?              @db.Real
+  commission_amount     Float?              @db.Real
+  is_commission_manual  Boolean             @default(false)
+  commission_note       String?
+  net_amount            Float?              @db.Real
+  collections           collections?        @relation(fields: [collection_id], references: [id], onUpdate: NoAction, map: "fk_billing_items_collection")
+  collectors            collectors          @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_billing_items_collector")
+  organizations         organizations       @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_billing_items_org")
+  stores                stores?             @relation(fields: [store_id], references: [id], onUpdate: NoAction, map: "fk_billing_items_store")
+  waste_type_masters    waste_type_masters? @relation(fields: [waste_type_id], references: [id], onUpdate: NoAction, map: "fk_billing_items_waste_type")
 
   @@index([collection_id], map: "idx_billing_collection")
   @@index([collector_id], map: "idx_billing_collector")
@@ -129,35 +140,46 @@ model app_billing_items {
   @@index([store_id], map: "idx_billing_store")
   @@index([submitted_at], map: "idx_billing_submitted")
   @@index([billing_type], map: "idx_billing_type")
+  @@index([org_id, collector_id, billing_month], map: "idx_billing_org_collector_month")
+  @@index([org_id, billing_type, status], map: "idx_billing_org_type_status")
+  @@index([org_id, deleted_at], map: "idx_billing_org_deleted")
+  @@index([is_commission_manual], map: "idx_billing_commission_manual")
   @@map("billing_items")
   @@schema("app")
 }
 
 model billing_summaries {
-  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  org_id               String    @db.Uuid
-  collector_id         String    @db.Uuid
-  billing_month        DateTime  @db.Date
-  total_fixed_amount   Float     @default(0) @db.Real
-  total_metered_amount Float     @default(0) @db.Real
-  total_other_amount   Float     @default(0) @db.Real
-  subtotal_amount      Float     @default(0) @db.Real
-  tax_amount           Float     @default(0) @db.Real
-  total_amount         Float     @default(0) @db.Real
-  total_items_count    Int       @default(0)
-  fixed_items_count    Int       @default(0)
-  metered_items_count  Int       @default(0)
-  other_items_count    Int       @default(0)
-  status               String    @default("DRAFT") @db.VarChar(50)
-  submitted_at         DateTime? @db.Timestamptz(6)
-  approved_at          DateTime? @db.Timestamptz(6)
-  approved_by          String?   @db.Uuid
-  paid_at              DateTime? @db.Timestamptz(6)
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id               String                 @db.Uuid
+  collector_id         String                 @db.Uuid
+  billing_month        DateTime               @db.Date
+  total_fixed_amount   Float                  @default(0) @db.Real
+  total_metered_amount Float                  @default(0) @db.Real
+  total_other_amount   Float                  @default(0) @db.Real
+  subtotal_amount      Float                  @default(0) @db.Real
+  tax_amount           Float                  @default(0) @db.Real
+  total_amount         Float                  @default(0) @db.Real
+  total_items_count    Int                    @default(0)
+  fixed_items_count    Int                    @default(0)
+  metered_items_count  Int                    @default(0)
+  other_items_count    Int                    @default(0)
+  status               String                 @default("DRAFT") @db.VarChar(50)
+  submitted_at         DateTime?              @db.Timestamptz(6)
+  approved_at          DateTime?              @db.Timestamptz(6)
+  approved_by          String?                @db.Uuid
+  paid_at              DateTime?              @db.Timestamptz(6)
   notes                String?
-  created_at           DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime  @default(now()) @db.Timestamptz(6)
-  created_by           String?   @db.Uuid
-  updated_by           String?   @db.Uuid
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  created_by           String?                @db.Uuid
+  updated_by           String?                @db.Uuid
+  rejected_at          DateTime?              @db.Timestamptz(6)
+  rejected_by          String?                @db.Uuid
+  rejection_reason     String?
+  submitted_by         String?                @db.Uuid
+  collectors           collectors             @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_billing_summary_collector")
+  organizations        organizations          @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_billing_summary_org")
+  tenant_invoice_items tenant_invoice_items[]
 
   @@unique([org_id, collector_id, billing_month], map: "unique_billing_summary")
   @@index([collector_id], map: "idx_billing_summary_collector")
@@ -221,6 +243,7 @@ model collections {
   updated_by            String              @default("system")
   created_at            DateTime            @default(now()) @db.Timestamptz(6)
   updated_at            DateTime            @default(now()) @db.Timestamptz(6)
+  billing_items         app_billing_items[]
   organizations         organizations       @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   collection_requests   collection_requests @relation(fields: [request_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -230,25 +253,262 @@ model collections {
   @@schema("app")
 }
 
-model contracts {
-  id                                                String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  org_id                                            String        @db.Uuid
-  emitter_id                                        String        @db.Uuid
-  transporter_id                                    String?       @db.Uuid
-  disposer_id                                       String?       @db.Uuid
-  scope                                             Json?
-  valid_from                                        DateTime      @db.Date
-  valid_to                                          DateTime?     @db.Date
-  created_at                                        DateTime?     @default(now()) @db.Timestamptz(6)
-  updated_at                                        DateTime?     @db.Timestamptz(6)
-  created_by                                        String?       @db.Uuid
-  updated_by                                        String?       @db.Uuid
-  deleted_at                                        DateTime?     @db.Timestamptz(6)
-  users_contracts_created_byTousers                 auth_users?   @relation("contracts_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  organizations_contracts_emitter_idToorganizations organizations @relation("contracts_emitter_idToorganizations", fields: [emitter_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  organizations_contracts_org_idToorganizations     organizations @relation("contracts_org_idToorganizations", fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users_contracts_updated_byTousers                 auth_users?   @relation("contracts_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model collectors {
+  id                           String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                      String?                        @unique @db.Uuid
+  company_name                 String                         @db.VarChar(255)
+  contact_person               String?                        @db.VarChar(255)
+  phone                        String?                        @db.VarChar(50)
+  address                      String?
+  license_number               String?                        @db.VarChar(100)
+  service_areas                String[]                       @default([])
+  is_active                    Boolean                        @default(true)
+  created_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  created_by                   String?                        @db.Uuid
+  updated_by                   String?                        @db.Uuid
+  deleted_at                   DateTime?                      @db.Timestamptz(6)
+  org_id                       String                         @db.Uuid
+  email                        String?                        @db.VarChar(255)
+  annual_waste_report_items    annual_waste_report_items[]
+  billing_items                app_billing_items[]
+  billing_summaries            billing_summaries[]
+  users                        app_users?                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_collector_user")
+  organizations                organizations                  @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_collectors_org")
+  commission_rules             commission_rules[]
+  hearing_external_store_items hearing_external_store_items[]
+  hearing_external_stores      hearing_external_stores[]
+  hearing_reminders            hearing_reminders[]
+  hearing_targets              hearing_targets[]
+  store_collector_assignments  store_collector_assignments[]
+  store_item_collectors        store_item_collectors[]
+  store_items                  store_items[]
+  tenant_invoice_items         tenant_invoice_items[]
+  waste_type_masters           waste_type_masters[]
 
+  @@index([deleted_at], map: "idx_collectors_deleted_at")
+  @@index([email], map: "idx_collectors_email")
+  @@index([org_id], map: "idx_collectors_org")
+  @@index([user_id], map: "idx_collectors_user_id")
+  @@schema("app")
+}
+
+model contracts {
+  id                                                    String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  org_id                                                String         @db.Uuid
+  emitter_id                                            String         @db.Uuid
+  transporter_id                                        String?        @db.Uuid
+  disposer_id                                           String?        @db.Uuid
+  scope                                                 Json?
+  valid_from                                            DateTime       @db.Date
+  valid_to                                              DateTime?      @db.Date
+  created_at                                            DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at                                            DateTime?      @db.Timestamptz(6)
+  created_by                                            String?        @db.Uuid
+  updated_by                                            String?        @db.Uuid
+  deleted_at                                            DateTime?      @db.Timestamptz(6)
+  users_contracts_created_byTousers                     auth_users?    @relation("contracts_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organizations_contracts_emitter_idToorganizations     organizations  @relation("contracts_emitter_idToorganizations", fields: [emitter_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations_contracts_org_idToorganizations         organizations  @relation("contracts_org_idToorganizations", fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_contracts_updated_byTousers                     auth_users?    @relation("contracts_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organizations_contracts_disposer_idToorganizations    organizations? @relation("contracts_disposer_idToorganizations", fields: [disposer_id], references: [id], onUpdate: NoAction, map: "fk_contracts_disposer")
+  organizations_contracts_transporter_idToorganizations organizations? @relation("contracts_transporter_idToorganizations", fields: [transporter_id], references: [id], onUpdate: NoAction, map: "fk_contracts_transporter")
+
+  @@schema("app")
+}
+
+model hearing_comments {
+  id                     String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hearing_target_id      String             @db.Uuid
+  comment                String
+  user_id                String             @db.Uuid
+  user_role              String
+  user_name              String
+  parent_comment_id      String?            @db.Uuid
+  is_read_by_admin       Boolean            @default(false)
+  is_read_by_collector   Boolean            @default(false)
+  created_at             DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime?          @db.Timestamptz(6)
+  deleted_at             DateTime?          @db.Timestamptz(6)
+  users                  app_users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_hearing_comments_user")
+  hearing_targets        hearing_targets    @relation(fields: [hearing_target_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hearing_comments       hearing_comments?  @relation("hearing_commentsTohearing_comments", fields: [parent_comment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_hearing_comments hearing_comments[] @relation("hearing_commentsTohearing_comments")
+
+  @@index([created_at(sort: Desc)], map: "idx_hearing_comments_created")
+  @@index([hearing_target_id], map: "idx_hearing_comments_target")
+  @@schema("app")
+}
+
+model hearing_external_store_items {
+  id                                                   String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                                               String                  @db.Uuid
+  external_store_id                                    String                  @db.Uuid
+  item_name                                            String
+  item_code                                            String?
+  sort_order                                           Int                     @default(0)
+  assigned_collector_id                                String?                 @db.Uuid
+  is_active                                            Boolean                 @default(true)
+  created_by                                           String                  @db.Uuid
+  created_at                                           DateTime                @default(now()) @db.Timestamptz(6)
+  updated_by                                           String?                 @db.Uuid
+  updated_at                                           DateTime?               @db.Timestamptz(6)
+  deleted_at                                           DateTime?               @db.Timestamptz(6)
+  collectors                                           collectors?             @relation(fields: [assigned_collector_id], references: [id], onUpdate: NoAction)
+  users_hearing_external_store_items_created_byTousers app_users               @relation("hearing_external_store_items_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hearing_external_stores                              hearing_external_stores @relation(fields: [external_store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations                                        organizations           @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_hearing_external_store_items_updated_byTousers app_users?              @relation("hearing_external_store_items_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hearing_targets                                      hearing_targets[]
+
+  @@unique([org_id, external_store_id, item_name], map: "uk_external_store_item_name")
+  @@index([assigned_collector_id], map: "idx_external_store_items_collector")
+  @@index([org_id], map: "idx_external_store_items_org")
+  @@index([external_store_id], map: "idx_external_store_items_store")
+  @@schema("app")
+}
+
+model hearing_external_stores {
+  id                                              String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                                          String                         @db.Uuid
+  company_name                                    String
+  store_code                                      String
+  store_name                                      String
+  address                                         String?
+  primary_collector_id                            String?                        @db.Uuid
+  is_active                                       Boolean                        @default(true)
+  created_by                                      String                         @db.Uuid
+  created_at                                      DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_by                                      String?                        @db.Uuid
+  updated_at                                      DateTime?                      @db.Timestamptz(6)
+  deleted_at                                      DateTime?                      @db.Timestamptz(6)
+  hearing_external_store_items                    hearing_external_store_items[]
+  users_hearing_external_stores_created_byTousers app_users                      @relation("hearing_external_stores_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organizations                                   organizations                  @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  collectors                                      collectors?                    @relation(fields: [primary_collector_id], references: [id], onUpdate: NoAction)
+  users_hearing_external_stores_updated_byTousers app_users?                     @relation("hearing_external_stores_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hearing_targets                                 hearing_targets[]
+
+  @@unique([org_id, company_name, store_code], map: "uk_external_store_code")
+  @@index([primary_collector_id], map: "idx_external_stores_collector")
+  @@index([org_id], map: "idx_external_stores_org")
+  @@schema("app")
+}
+
+model hearing_reminders {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hearing_id    String     @db.Uuid
+  collector_id  String     @db.Uuid
+  reminder_type String
+  sent_at       DateTime?  @db.Timestamptz(6)
+  status        String     @default("PENDING")
+  error_message String?
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+  collectors    collectors @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hearings      hearings   @relation(fields: [hearing_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([collector_id], map: "idx_hearing_reminders_collector")
+  @@index([hearing_id], map: "idx_hearing_reminders_hearing")
+  @@index([status], map: "idx_hearing_reminders_status")
+  @@index([reminder_type], map: "idx_hearing_reminders_type")
+  @@schema("app")
+}
+
+model hearing_responses {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hearing_target_id String          @db.Uuid
+  target_date       DateTime        @db.Date
+  is_available      Boolean         @default(false)
+  responded_by      String          @db.Uuid
+  responded_at      DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?       @db.Timestamptz(6)
+  hearing_targets   hearing_targets @relation(fields: [hearing_target_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users             app_users       @relation(fields: [responded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([hearing_target_id, target_date], map: "uk_hearing_response_date")
+  @@index([is_available], map: "idx_hearing_responses_available")
+  @@index([target_date], map: "idx_hearing_responses_date")
+  @@index([hearing_target_id], map: "idx_hearing_responses_target")
+  @@schema("app")
+}
+
+model hearing_targets {
+  id                           String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hearing_id                   String                        @db.Uuid
+  collector_id                 String                        @db.Uuid
+  store_id                     String?                       @db.Uuid
+  external_store_id            String?                       @db.Uuid
+  store_item_id                String?                       @db.Uuid
+  external_store_item_id       String?                       @db.Uuid
+  company_name                 String
+  store_name                   String
+  item_name                    String
+  notified_at                  DateTime?                     @db.Timestamptz(6)
+  notification_status          String                        @default("PENDING")
+  response_status              String                        @default("NOT_RESPONDED")
+  responded_at                 DateTime?                     @db.Timestamptz(6)
+  created_at                   DateTime                      @default(now()) @db.Timestamptz(6)
+  hearing_comments             hearing_comments[]
+  hearing_responses            hearing_responses[]
+  collectors                   collectors                    @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hearing_external_stores      hearing_external_stores?      @relation(fields: [external_store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hearing_external_store_items hearing_external_store_items? @relation(fields: [external_store_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hearings                     hearings                      @relation(fields: [hearing_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  stores                       stores?                       @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  store_items                  store_items?                  @relation(fields: [store_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hearing_unlock_requests      hearing_unlock_requests[]
+
+  @@index([collector_id], map: "idx_hearing_targets_collector")
+  @@index([external_store_item_id], map: "idx_hearing_targets_external_store_item")
+  @@index([hearing_id], map: "idx_hearing_targets_hearing")
+  @@index([response_status], map: "idx_hearing_targets_response_status")
+  @@index([store_item_id], map: "idx_hearing_targets_store_item")
+  @@schema("app")
+}
+
+model hearing_unlock_requests {
+  id                                                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hearing_target_id                                 String          @db.Uuid
+  requested_by                                      String          @db.Uuid
+  request_reason                                    String
+  requested_at                                      DateTime        @default(now()) @db.Timestamptz(6)
+  status                                            String          @default("PENDING")
+  reviewed_by                                       String?         @db.Uuid
+  review_comment                                    String?
+  reviewed_at                                       DateTime?       @db.Timestamptz(6)
+  hearing_targets                                   hearing_targets @relation(fields: [hearing_target_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_hearing_unlock_requests_requested_byTousers app_users       @relation("hearing_unlock_requests_requested_byTousers", fields: [requested_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_hearing_unlock_requests_reviewed_byTousers  app_users?      @relation("hearing_unlock_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status], map: "idx_unlock_requests_status")
+  @@index([hearing_target_id], map: "idx_unlock_requests_target")
+  @@schema("app")
+}
+
+model hearings {
+  id                               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                           String              @db.Uuid
+  title                            String
+  description                      String?
+  target_period_from               DateTime            @db.Date
+  target_period_to                 DateTime            @db.Date
+  response_deadline                DateTime            @db.Timestamptz(6)
+  status                           String              @default("DRAFT")
+  created_by                       String              @db.Uuid
+  created_at                       DateTime            @default(now()) @db.Timestamptz(6)
+  updated_by                       String?             @db.Uuid
+  updated_at                       DateTime?           @db.Timestamptz(6)
+  deleted_at                       DateTime?           @db.Timestamptz(6)
+  hearing_reminders                hearing_reminders[]
+  hearing_targets                  hearing_targets[]
+  users_hearings_created_byTousers app_users           @relation("hearings_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organizations                    organizations       @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_hearings_updated_byTousers app_users?          @relation("hearings_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([response_deadline], map: "idx_hearings_deadline")
+  @@index([org_id], map: "idx_hearings_org")
+  @@index([status], map: "idx_hearings_status")
   @@schema("app")
 }
 
@@ -257,7 +517,7 @@ model item_maps {
   id                                String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   org_id                            String        @db.Uuid
   item_label                        String
-  jwnet_code                        String
+  jwnet_code                        String?
   hazard                            Boolean       @default(false)
   default_unit                      unit          @default(T)
   density_t_per_m3                  Decimal?      @db.Decimal
@@ -347,38 +607,54 @@ model jwnet_waste_codes {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model organizations {
-  id                                                                                  String                        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                                                                                  String                         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   name                                                                                String
-  created_at                                                                          DateTime                      @default(now()) @db.Timestamptz(6)
-  jwnet_subscriber_id                                                                 String?                       @db.VarChar(10)
-  jwnet_public_confirmation_id                                                        String?                       @db.VarChar(10)
-  code                                                                                String?                       @db.VarChar(50)
-  updated_at                                                                          DateTime?                     @default(now()) @db.Timestamptz(6)
-  created_by                                                                          String?                       @db.Uuid
-  updated_by                                                                          String?                       @db.Uuid
-  deleted_at                                                                          DateTime?                     @db.Timestamptz(6)
-  org_type                                                                            String?                       @db.VarChar(50)
-  is_active                                                                           Boolean                       @default(true)
+  created_at                                                                          DateTime                       @default(now()) @db.Timestamptz(6)
+  jwnet_subscriber_id                                                                 String?                        @db.VarChar(10)
+  jwnet_public_confirmation_id                                                        String?                        @db.VarChar(10)
+  code                                                                                String?                        @db.VarChar(50)
+  updated_at                                                                          DateTime?                      @default(now()) @db.Timestamptz(6)
+  created_by                                                                          String?                        @db.Uuid
+  updated_by                                                                          String?                        @db.Uuid
+  deleted_at                                                                          DateTime?                      @db.Timestamptz(6)
+  org_type                                                                            String?                        @db.VarChar(50)
+  is_active                                                                           Boolean                        @default(true)
   actuals                                                                             actuals[]
+  annual_waste_reports                                                                annual_waste_reports[]
   approvals                                                                           approvals[]
   audit_logs                                                                          audit_logs[]
+  billing_items                                                                       app_billing_items[]
+  billing_settings                                                                    billing_settings?
+  billing_summaries                                                                   billing_summaries[]
   collection_requests                                                                 collection_requests[]
   collections                                                                         collections[]
-  contracts_contracts_emitter_idToorganizations                                       contracts[]                   @relation("contracts_emitter_idToorganizations")
-  contracts_contracts_org_idToorganizations                                           contracts[]                   @relation("contracts_org_idToorganizations")
+  collectors                                                                          collectors[]
+  commission_rules                                                                    commission_rules[]
+  contracts_contracts_emitter_idToorganizations                                       contracts[]                    @relation("contracts_emitter_idToorganizations")
+  contracts_contracts_org_idToorganizations                                           contracts[]                    @relation("contracts_org_idToorganizations")
+  contracts_contracts_disposer_idToorganizations                                      contracts[]                    @relation("contracts_disposer_idToorganizations")
+  contracts_contracts_transporter_idToorganizations                                   contracts[]                    @relation("contracts_transporter_idToorganizations")
+  email_logs                                                                          email_logs[]
+  email_queue                                                                         email_queue[]
+  hearing_external_store_items                                                        hearing_external_store_items[]
+  hearing_external_stores                                                             hearing_external_stores[]
+  hearings                                                                            hearings[]
   item_maps                                                                           item_maps[]
-  jwnet_party_combinations_jwnet_party_combinations_disposer_org_idToorganizations    jwnet_party_combinations[]    @relation("jwnet_party_combinations_disposer_org_idToorganizations")
-  jwnet_party_combinations_jwnet_party_combinations_emitter_org_idToorganizations     jwnet_party_combinations[]    @relation("jwnet_party_combinations_emitter_org_idToorganizations")
-  jwnet_party_combinations_jwnet_party_combinations_transporter_org_idToorganizations jwnet_party_combinations[]    @relation("jwnet_party_combinations_transporter_org_idToorganizations")
+  jwnet_party_combinations_jwnet_party_combinations_disposer_org_idToorganizations    jwnet_party_combinations[]     @relation("jwnet_party_combinations_disposer_org_idToorganizations")
+  jwnet_party_combinations_jwnet_party_combinations_emitter_org_idToorganizations     jwnet_party_combinations[]     @relation("jwnet_party_combinations_emitter_org_idToorganizations")
+  jwnet_party_combinations_jwnet_party_combinations_transporter_org_idToorganizations jwnet_party_combinations[]     @relation("jwnet_party_combinations_transporter_org_idToorganizations")
   plans                                                                               plans[]
   registrations                                                                       registrations[]
   reservations                                                                        reservations[]
   stage_plans                                                                         stage_plans[]
   store_collector_assignments                                                         store_collector_assignments[]
+  store_item_collectors                                                               store_item_collectors[]
+  store_items                                                                         store_items[]
   stores                                                                              stores[]
+  tenant_invoices                                                                     tenant_invoices[]
   user_org_roles                                                                      user_org_roles[]
   billing_change_logs                                                                 billing_change_logs[]
-  billing_items                                                                       public_billing_items[]
+  public_billing_items                                                                public_billing_items[]
   billing_records                                                                     billing_records[]
   closing_date_settings                                                               closing_date_settings[]
   commission_masters                                                                  commission_masters[]
@@ -409,8 +685,8 @@ model plans {
   deleted_at                    DateTime?      @db.Timestamptz(6)
   actuals                       actuals?
   approvals                     approvals?
+  item_maps                     item_maps      @relation(fields: [item_map_id], references: [id], onUpdate: NoAction, map: "fk_plans_item_map")
   users_plans_created_byTousers auth_users?    @relation("plans_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  item_maps                     item_maps      @relation(fields: [item_map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizations                 organizations  @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   stores                        stores         @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users_plans_updated_byTousers auth_users?    @relation("plans_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -506,7 +782,9 @@ model store_collector_assignments {
   updated_by     String        @default("system")
   created_at     DateTime      @default(now()) @db.Timestamptz(6)
   updated_at     DateTime      @default(now()) @db.Timestamptz(6)
-  users          public_users  @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  deleted_at     DateTime?     @db.Timestamptz(6)
+  is_primary     Boolean       @default(false)
+  collectors     collectors    @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   organizations  organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   stores         stores        @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -515,6 +793,61 @@ model store_collector_assignments {
   @@index([is_active], map: "idx_store_collector_assignments_is_active")
   @@index([org_id], map: "idx_store_collector_assignments_org_id")
   @@index([store_id], map: "idx_store_collector_assignments_store_id")
+  @@schema("app")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model store_item_collectors {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  store_id      String        @db.Uuid
+  item_name     String        @db.VarChar(255)
+  item_code     String?       @db.VarChar(100)
+  collector_id  String        @db.Uuid
+  priority      Int
+  is_active     Boolean       @default(true)
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  created_by    String?       @db.Uuid
+  updated_at    DateTime      @default(now()) @db.Timestamptz(6)
+  updated_by    String?       @db.Uuid
+  deleted_at    DateTime?     @db.Timestamptz(6)
+  collectors    collectors    @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_store_item_collectors_collector")
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_store_item_collectors_org")
+  stores        stores        @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_store_item_collectors_store")
+
+  @@unique([org_id, store_id, item_name, collector_id], map: "uk_store_item_collector")
+  @@index([collector_id], map: "idx_store_item_collectors_collector")
+  @@index([org_id], map: "idx_store_item_collectors_org")
+  @@index([store_id, item_name], map: "idx_store_item_collectors_store_item")
+  @@schema("app")
+}
+
+model store_items {
+  id                                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                              String            @db.Uuid
+  store_id                            String            @db.Uuid
+  item_name                           String
+  item_code                           String?
+  sort_order                          Int               @default(0)
+  assigned_collector_id               String?           @db.Uuid
+  is_active                           Boolean           @default(true)
+  created_by                          String            @db.Uuid
+  created_at                          DateTime          @default(now()) @db.Timestamptz(6)
+  updated_by                          String?           @db.Uuid
+  updated_at                          DateTime?         @db.Timestamptz(6)
+  deleted_at                          DateTime?         @db.Timestamptz(6)
+  hearing_targets                     hearing_targets[]
+  collectors                          collectors?       @relation(fields: [assigned_collector_id], references: [id], onUpdate: NoAction)
+  users_store_items_created_byTousers app_users         @relation("store_items_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organizations                       organizations     @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  stores                              stores            @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_store_items_updated_byTousers app_users?        @relation("store_items_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([org_id, store_id, item_name], map: "uk_store_item_name")
+  @@index([assigned_collector_id], map: "idx_store_items_collector")
+  @@index([org_id], map: "idx_store_items_org")
+  @@index([store_id], map: "idx_store_items_store")
   @@schema("app")
 }
 
@@ -534,9 +867,14 @@ model stores {
   deleted_at                     DateTime?                     @db.Timestamptz(6)
   jwnet_subscriber_id            String?                       @db.VarChar(10)
   jwnet_public_confirmation_id   String?                       @db.VarChar(10)
+  annual_waste_report_items      annual_waste_report_items[]
+  billing_items                  app_billing_items[]
   collection_requests            collection_requests[]
+  hearing_targets                hearing_targets[]
   plans                          plans[]
   store_collector_assignments    store_collector_assignments[]
+  store_item_collectors          store_item_collectors[]
+  store_items                    store_items[]
   users_stores_created_byTousers auth_users?                   @relation("stores_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizations                  organizations                 @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users_stores_updated_byTousers auth_users?                   @relation("stores_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -568,18 +906,31 @@ model user_org_roles {
 }
 
 model app_users {
-  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  auth_user_id   String           @unique @db.Uuid
-  name           String
-  is_active      Boolean          @default(true)
-  created_at     DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime         @default(now()) @db.Timestamptz(6)
-  deleted_at     DateTime?        @db.Timestamptz(6)
-  email          String           @unique @default("") @db.VarChar(255)
-  created_by     String?          @db.Uuid
-  updated_by     String?          @db.Uuid
-  user_org_roles user_org_roles[]
-  users          auth_users       @relation(fields: [auth_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                                                                          String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auth_user_id                                                                String                         @unique @db.Uuid
+  name                                                                        String
+  is_active                                                                   Boolean                        @default(true)
+  created_at                                                                  DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at                                                                  DateTime                       @default(now()) @db.Timestamptz(6)
+  deleted_at                                                                  DateTime?                      @db.Timestamptz(6)
+  email                                                                       String                         @unique @default("") @db.VarChar(255)
+  created_by                                                                  String?                        @db.Uuid
+  updated_by                                                                  String?                        @db.Uuid
+  collectors                                                                  collectors?
+  hearing_comments                                                            hearing_comments[]
+  hearing_external_store_items_hearing_external_store_items_created_byTousers hearing_external_store_items[] @relation("hearing_external_store_items_created_byTousers")
+  hearing_external_store_items_hearing_external_store_items_updated_byTousers hearing_external_store_items[] @relation("hearing_external_store_items_updated_byTousers")
+  hearing_external_stores_hearing_external_stores_created_byTousers           hearing_external_stores[]      @relation("hearing_external_stores_created_byTousers")
+  hearing_external_stores_hearing_external_stores_updated_byTousers           hearing_external_stores[]      @relation("hearing_external_stores_updated_byTousers")
+  hearing_responses                                                           hearing_responses[]
+  hearing_unlock_requests_hearing_unlock_requests_requested_byTousers         hearing_unlock_requests[]      @relation("hearing_unlock_requests_requested_byTousers")
+  hearing_unlock_requests_hearing_unlock_requests_reviewed_byTousers          hearing_unlock_requests[]      @relation("hearing_unlock_requests_reviewed_byTousers")
+  hearings_hearings_created_byTousers                                         hearings[]                     @relation("hearings_created_byTousers")
+  hearings_hearings_updated_byTousers                                         hearings[]                     @relation("hearings_updated_byTousers")
+  store_items_store_items_created_byTousers                                   store_items[]                  @relation("store_items_created_byTousers")
+  store_items_store_items_updated_byTousers                                   store_items[]                  @relation("store_items_updated_byTousers")
+  user_org_roles                                                              user_org_roles[]
+  users                                                                       auth_users                     @relation(fields: [auth_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([auth_user_id], map: "idx_users_auth_user_id")
   @@index([email], map: "idx_users_email")
@@ -590,27 +941,30 @@ model app_users {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model waste_type_masters {
-  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  org_id               String            @db.Uuid
-  collector_id         String            @db.Uuid
-  waste_type_code      String            @db.VarChar(50)
-  waste_type_name      String            @db.VarChar(255)
-  waste_category       String            @db.VarChar(100)
-  waste_classification String            @db.VarChar(100)
-  jwnet_waste_code_id  String            @db.Uuid
-  jwnet_waste_code     String            @db.VarChar(10)
-  unit_code            String            @db.VarChar(10)
-  unit_price           Float?            @db.Real
-  description          String?
-  is_active            Boolean           @default(true)
-  created_at           DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime          @default(now()) @db.Timestamptz(6)
-  created_by           String?           @db.Uuid
-  updated_by           String?           @db.Uuid
-  deleted_at           DateTime?         @db.Timestamptz(6)
-  billing_category     String?           @db.VarChar(20)
-  billing_type_default String?           @db.VarChar(20)
-  jwnet_waste_codes    jwnet_waste_codes @relation(fields: [jwnet_waste_code_id], references: [id], onUpdate: NoAction, map: "fk_waste_type_jwnet_code")
+  id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                    String                      @db.Uuid
+  collector_id              String?                     @db.Uuid
+  waste_type_code           String                      @db.VarChar(50)
+  waste_type_name           String                      @db.VarChar(255)
+  waste_category            String                      @db.VarChar(100)
+  waste_classification      String                      @db.VarChar(100)
+  jwnet_waste_code_id       String?                     @db.Uuid
+  jwnet_waste_code          String?                     @db.VarChar(10)
+  unit_code                 String                      @db.VarChar(10)
+  unit_price                Float?                      @db.Real
+  description               String?
+  is_active                 Boolean                     @default(true)
+  created_at                DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime                    @default(now()) @db.Timestamptz(6)
+  created_by                String?                     @db.Uuid
+  updated_by                String?                     @db.Uuid
+  deleted_at                DateTime?                   @db.Timestamptz(6)
+  billing_category          String?                     @db.VarChar(20)
+  billing_type_default      String?                     @db.VarChar(20)
+  annual_waste_report_items annual_waste_report_items[]
+  billing_items             app_billing_items[]
+  collectors                collectors?                 @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_waste_type_collector")
+  jwnet_waste_codes         jwnet_waste_codes?          @relation(fields: [jwnet_waste_code_id], references: [id], onUpdate: NoAction, map: "fk_waste_type_jwnet_code")
 
   @@unique([org_id, collector_id, waste_type_code], map: "unique_waste_type_per_collector")
   @@index([is_active], map: "idx_waste_type_active")
@@ -744,22 +1098,64 @@ model mfa_factors {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model oauth_clients {
-  id                 String                  @id @db.Uuid
-  client_id          String                  @unique
-  client_secret_hash String
-  registration_type  oauth_registration_type
-  redirect_uris      String
-  grant_types        String
-  client_name        String?
-  client_uri         String?
-  logo_uri           String?
-  created_at         DateTime                @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime                @default(now()) @db.Timestamptz(6)
-  deleted_at         DateTime?               @db.Timestamptz(6)
+model oauth_authorizations {
+  id                    String                     @id @db.Uuid
+  authorization_id      String                     @unique
+  client_id             String                     @db.Uuid
+  user_id               String?                    @db.Uuid
+  redirect_uri          String
+  scope                 String
+  state                 String?
+  resource              String?
+  code_challenge        String?
+  code_challenge_method code_challenge_method?
+  response_type         oauth_response_type        @default(code)
+  status                oauth_authorization_status @default(pending)
+  authorization_code    String?                    @unique
+  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  expires_at            DateTime                   @default(dbgenerated("(now() + '00:03:00'::interval)")) @db.Timestamptz(6)
+  approved_at           DateTime?                  @db.Timestamptz(6)
+  oauth_clients         oauth_clients              @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                 auth_users?                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([client_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_clients {
+  id                   String                  @id @db.Uuid
+  client_secret_hash   String?
+  registration_type    oauth_registration_type
+  redirect_uris        String
+  grant_types          String
+  client_name          String?
+  client_uri           String?
+  logo_uri             String?
+  created_at           DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at           DateTime?               @db.Timestamptz(6)
+  client_type          oauth_client_type       @default(confidential)
+  oauth_authorizations oauth_authorizations[]
+  oauth_consents       oauth_consents[]
+  sessions             sessions[]
+
   @@index([deleted_at])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_consents {
+  id            String        @id @db.Uuid
+  user_id       String        @db.Uuid
+  client_id     String        @db.Uuid
+  scopes        String
+  granted_at    DateTime      @default(now()) @db.Timestamptz(6)
+  revoked_at    DateTime?     @db.Timestamptz(6)
+  oauth_clients oauth_clients @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         auth_users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, client_id], map: "oauth_consents_user_client_unique")
+  @@index([user_id, granted_at(sort: Desc)], map: "oauth_consents_user_order_idx")
   @@schema("auth")
 }
 
@@ -854,22 +1250,25 @@ model schema_migrations {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model sessions {
-  id             String           @id @db.Uuid
-  user_id        String           @db.Uuid
-  created_at     DateTime?        @db.Timestamptz(6)
-  updated_at     DateTime?        @db.Timestamptz(6)
-  factor_id      String?          @db.Uuid
-  aal            aal_level?
-  not_after      DateTime?        @db.Timestamptz(6)
-  refreshed_at   DateTime?        @db.Timestamp(6)
-  user_agent     String?
-  ip             String?          @db.Inet
-  tag            String?
-  mfa_amr_claims mfa_amr_claims[]
-  refresh_tokens refresh_tokens[]
-  users          auth_users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id              String           @id @db.Uuid
+  user_id         String           @db.Uuid
+  created_at      DateTime?        @db.Timestamptz(6)
+  updated_at      DateTime?        @db.Timestamptz(6)
+  factor_id       String?          @db.Uuid
+  aal             aal_level?
+  not_after       DateTime?        @db.Timestamptz(6)
+  refreshed_at    DateTime?        @db.Timestamp(6)
+  user_agent      String?
+  ip              String?          @db.Inet
+  tag             String?
+  oauth_client_id String?          @db.Uuid
+  mfa_amr_claims  mfa_amr_claims[]
+  refresh_tokens  refresh_tokens[]
+  oauth_clients   oauth_clients?   @relation(fields: [oauth_client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           auth_users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([not_after(sort: Desc)])
+  @@index([oauth_client_id])
   @@index([user_id])
   @@index([user_id, created_at], map: "user_id_created_at_idx")
   @@schema("auth")
@@ -914,61 +1313,71 @@ model sso_providers {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model auth_users {
-  instance_id                                   String?           @db.Uuid
-  id                                            String            @id @db.Uuid
-  aud                                           String?           @db.VarChar(255)
-  role                                          String?           @db.VarChar(255)
-  email                                         String?           @db.VarChar(255)
-  encrypted_password                            String?           @db.VarChar(255)
-  email_confirmed_at                            DateTime?         @db.Timestamptz(6)
-  invited_at                                    DateTime?         @db.Timestamptz(6)
-  confirmation_token                            String?           @db.VarChar(255)
-  confirmation_sent_at                          DateTime?         @db.Timestamptz(6)
-  recovery_token                                String?           @db.VarChar(255)
-  recovery_sent_at                              DateTime?         @db.Timestamptz(6)
-  email_change_token_new                        String?           @db.VarChar(255)
-  email_change                                  String?           @db.VarChar(255)
-  email_change_sent_at                          DateTime?         @db.Timestamptz(6)
-  last_sign_in_at                               DateTime?         @db.Timestamptz(6)
+  instance_id                                   String?                     @db.Uuid
+  id                                            String                      @id @db.Uuid
+  aud                                           String?                     @db.VarChar(255)
+  role                                          String?                     @db.VarChar(255)
+  email                                         String?                     @db.VarChar(255)
+  encrypted_password                            String?                     @db.VarChar(255)
+  email_confirmed_at                            DateTime?                   @db.Timestamptz(6)
+  invited_at                                    DateTime?                   @db.Timestamptz(6)
+  confirmation_token                            String?                     @db.VarChar(255)
+  confirmation_sent_at                          DateTime?                   @db.Timestamptz(6)
+  recovery_token                                String?                     @db.VarChar(255)
+  recovery_sent_at                              DateTime?                   @db.Timestamptz(6)
+  email_change_token_new                        String?                     @db.VarChar(255)
+  email_change                                  String?                     @db.VarChar(255)
+  email_change_sent_at                          DateTime?                   @db.Timestamptz(6)
+  last_sign_in_at                               DateTime?                   @db.Timestamptz(6)
   raw_app_meta_data                             Json?
   raw_user_meta_data                            Json?
   is_super_admin                                Boolean?
-  created_at                                    DateTime?         @db.Timestamptz(6)
-  updated_at                                    DateTime?         @db.Timestamptz(6)
-  phone                                         String?           @unique
-  phone_confirmed_at                            DateTime?         @db.Timestamptz(6)
-  phone_change                                  String?           @default("")
-  phone_change_token                            String?           @default("") @db.VarChar(255)
-  phone_change_sent_at                          DateTime?         @db.Timestamptz(6)
-  confirmed_at                                  DateTime?         @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
-  email_change_token_current                    String?           @default("") @db.VarChar(255)
-  email_change_confirm_status                   Int?              @default(0) @db.SmallInt
-  banned_until                                  DateTime?         @db.Timestamptz(6)
-  reauthentication_token                        String?           @default("") @db.VarChar(255)
-  reauthentication_sent_at                      DateTime?         @db.Timestamptz(6)
-  is_sso_user                                   Boolean           @default(false)
-  deleted_at                                    DateTime?         @db.Timestamptz(6)
-  is_anonymous                                  Boolean           @default(false)
-  actuals_actuals_created_byTousers             actuals[]         @relation("actuals_created_byTousers")
-  actuals_actuals_updated_byTousers             actuals[]         @relation("actuals_updated_byTousers")
-  approvals_approvals_approved_byTousers        approvals[]       @relation("approvals_approved_byTousers")
-  approvals_approvals_created_byTousers         approvals[]       @relation("approvals_created_byTousers")
-  approvals_approvals_updated_byTousers         approvals[]       @relation("approvals_updated_byTousers")
-  contracts_contracts_created_byTousers         contracts[]       @relation("contracts_created_byTousers")
-  contracts_contracts_updated_byTousers         contracts[]       @relation("contracts_updated_byTousers")
-  item_maps_item_maps_created_byTousers         item_maps[]       @relation("item_maps_created_byTousers")
-  item_maps_item_maps_updated_byTousers         item_maps[]       @relation("item_maps_updated_byTousers")
-  plans_plans_created_byTousers                 plans[]           @relation("plans_created_byTousers")
-  plans_plans_updated_byTousers                 plans[]           @relation("plans_updated_byTousers")
-  registrations_registrations_created_byTousers registrations[]   @relation("registrations_created_byTousers")
-  registrations_registrations_updated_byTousers registrations[]   @relation("registrations_updated_byTousers")
-  reservations_reservations_created_byTousers   reservations[]    @relation("reservations_created_byTousers")
-  reservations_reservations_updated_byTousers   reservations[]    @relation("reservations_updated_byTousers")
-  stores_stores_created_byTousers               stores[]          @relation("stores_created_byTousers")
-  stores_stores_updated_byTousers               stores[]          @relation("stores_updated_byTousers")
+  created_at                                    DateTime?                   @db.Timestamptz(6)
+  updated_at                                    DateTime?                   @db.Timestamptz(6)
+  phone                                         String?                     @unique
+  phone_confirmed_at                            DateTime?                   @db.Timestamptz(6)
+  phone_change                                  String?                     @default("")
+  phone_change_token                            String?                     @default("") @db.VarChar(255)
+  phone_change_sent_at                          DateTime?                   @db.Timestamptz(6)
+  confirmed_at                                  DateTime?                   @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  email_change_token_current                    String?                     @default("") @db.VarChar(255)
+  email_change_confirm_status                   Int?                        @default(0) @db.SmallInt
+  banned_until                                  DateTime?                   @db.Timestamptz(6)
+  reauthentication_token                        String?                     @default("") @db.VarChar(255)
+  reauthentication_sent_at                      DateTime?                   @db.Timestamptz(6)
+  is_sso_user                                   Boolean                     @default(false)
+  deleted_at                                    DateTime?                   @db.Timestamptz(6)
+  is_anonymous                                  Boolean                     @default(false)
+  actuals_actuals_created_byTousers             actuals[]                   @relation("actuals_created_byTousers")
+  actuals_actuals_updated_byTousers             actuals[]                   @relation("actuals_updated_byTousers")
+  annual_report_items_created_by                annual_waste_report_items[] @relation("annual_report_items_created_by")
+  annual_report_items_updated_by                annual_waste_report_items[] @relation("annual_report_items_updated_by")
+  annual_reports_approved_by                    annual_waste_reports[]      @relation("annual_reports_approved_by")
+  annual_reports_created_by                     annual_waste_reports[]      @relation("annual_reports_created_by")
+  annual_reports_submitted_by                   annual_waste_reports[]      @relation("annual_reports_submitted_by")
+  annual_reports_updated_by                     annual_waste_reports[]      @relation("annual_reports_updated_by")
+  approvals_approvals_approved_byTousers        approvals[]                 @relation("approvals_approved_byTousers")
+  approvals_approvals_created_byTousers         approvals[]                 @relation("approvals_created_byTousers")
+  approvals_approvals_updated_byTousers         approvals[]                 @relation("approvals_updated_byTousers")
+  billing_settings_created_by                   billing_settings[]          @relation("billing_settings_created_by")
+  billing_settings_updated_by                   billing_settings[]          @relation("billing_settings_updated_by")
+  contracts_contracts_created_byTousers         contracts[]                 @relation("contracts_created_byTousers")
+  contracts_contracts_updated_byTousers         contracts[]                 @relation("contracts_updated_byTousers")
+  item_maps_item_maps_created_byTousers         item_maps[]                 @relation("item_maps_created_byTousers")
+  item_maps_item_maps_updated_byTousers         item_maps[]                 @relation("item_maps_updated_byTousers")
+  plans_plans_created_byTousers                 plans[]                     @relation("plans_created_byTousers")
+  plans_plans_updated_byTousers                 plans[]                     @relation("plans_updated_byTousers")
+  registrations_registrations_created_byTousers registrations[]             @relation("registrations_created_byTousers")
+  registrations_registrations_updated_byTousers registrations[]             @relation("registrations_updated_byTousers")
+  reservations_reservations_created_byTousers   reservations[]              @relation("reservations_created_byTousers")
+  reservations_reservations_updated_byTousers   reservations[]              @relation("reservations_updated_byTousers")
+  stores_stores_created_byTousers               stores[]                    @relation("stores_created_byTousers")
+  stores_stores_updated_byTousers               stores[]                    @relation("stores_updated_byTousers")
   users                                         app_users?
   identities                                    identities[]
   mfa_factors                                   mfa_factors[]
+  oauth_authorizations                          oauth_authorizations[]
+  oauth_consents                                oauth_consents[]
   one_time_tokens                               one_time_tokens[]
   sessions                                      sessions[]
 
@@ -1369,14 +1778,14 @@ model survey_templates {
 }
 
 model public_users {
-  id                                                                   String                        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email                                                                String                        @unique
+  id                                                                   String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email                                                                String                     @unique
   name                                                                 String
   role                                                                 String
   company_name                                                         String?
   phone                                                                String?
   address                                                              String?
-  is_active                                                            Boolean?                      @default(true)
+  is_active                                                            Boolean?                   @default(true)
   org_id                                                               String?
   contact_person                                                       String?
   license_number                                                       String?
@@ -1384,24 +1793,23 @@ model public_users {
   waste_types                                                          String[]
   collection_schedule                                                  Json?
   special_notes                                                        String?
-  created_at                                                           DateTime                      @default(now()) @db.Timestamptz(6)
-  updated_at                                                           DateTime                      @default(now()) @db.Timestamptz(6)
-  created_by                                                           String?                       @db.Uuid
-  updated_by                                                           String?                       @db.Uuid
-  deleted_at                                                           DateTime?                     @db.Timestamptz(6)
+  created_at                                                           DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at                                                           DateTime                   @default(now()) @db.Timestamptz(6)
+  created_by                                                           String?                    @db.Uuid
+  updated_by                                                           String?                    @db.Uuid
+  deleted_at                                                           DateTime?                  @db.Timestamptz(6)
   collection_requests                                                  collection_requests[]
-  store_collector_assignments                                          store_collector_assignments[]
   billing_change_logs                                                  billing_change_logs[]
-  billing_records_billing_records_approved_byTousers                   billing_records[]             @relation("billing_records_approved_byTousers")
-  billing_records_billing_records_collector_idTousers                  billing_records[]             @relation("billing_records_collector_idTousers")
-  closing_date_settings_closing_date_settings_created_byTousers        closing_date_settings[]       @relation("closing_date_settings_created_byTousers")
-  closing_date_settings_closing_date_settings_end_user_idTousers       closing_date_settings[]       @relation("closing_date_settings_end_user_idTousers")
-  closing_date_settings_closing_date_settings_updated_byTousers        closing_date_settings[]       @relation("closing_date_settings_updated_byTousers")
-  commission_masters_commission_masters_created_byTousers              commission_masters[]          @relation("commission_masters_created_byTousers")
-  commission_masters_commission_masters_updated_byTousers              commission_masters[]          @relation("commission_masters_updated_byTousers")
-  end_user_billing_records_end_user_billing_records_created_byTousers  end_user_billing_records[]    @relation("end_user_billing_records_created_byTousers")
-  end_user_billing_records_end_user_billing_records_end_user_idTousers end_user_billing_records[]    @relation("end_user_billing_records_end_user_idTousers")
-  end_user_billing_records_end_user_billing_records_updated_byTousers  end_user_billing_records[]    @relation("end_user_billing_records_updated_byTousers")
+  billing_records_billing_records_approved_byTousers                   billing_records[]          @relation("billing_records_approved_byTousers")
+  billing_records_billing_records_collector_idTousers                  billing_records[]          @relation("billing_records_collector_idTousers")
+  closing_date_settings_closing_date_settings_created_byTousers        closing_date_settings[]    @relation("closing_date_settings_created_byTousers")
+  closing_date_settings_closing_date_settings_end_user_idTousers       closing_date_settings[]    @relation("closing_date_settings_end_user_idTousers")
+  closing_date_settings_closing_date_settings_updated_byTousers        closing_date_settings[]    @relation("closing_date_settings_updated_byTousers")
+  commission_masters_commission_masters_created_byTousers              commission_masters[]       @relation("commission_masters_created_byTousers")
+  commission_masters_commission_masters_updated_byTousers              commission_masters[]       @relation("commission_masters_updated_byTousers")
+  end_user_billing_records_end_user_billing_records_created_byTousers  end_user_billing_records[] @relation("end_user_billing_records_created_byTousers")
+  end_user_billing_records_end_user_billing_records_end_user_idTousers end_user_billing_records[] @relation("end_user_billing_records_end_user_idTousers")
+  end_user_billing_records_end_user_billing_records_updated_byTousers  end_user_billing_records[] @relation("end_user_billing_records_updated_byTousers")
   price_masters                                                        price_masters[]
   survey_comments                                                      survey_comments[]
   survey_recipients                                                    survey_recipients[]
@@ -1426,6 +1834,235 @@ model waste_types {
   survey_responses    survey_responses[]
 
   @@schema("public")
+}
+
+/// 年間廃棄物報告書（事業系ごみ・不燃ごみ等の年間報告書）
+model annual_waste_reports {
+  id                 String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id             String                      @db.Uuid
+  fiscal_year        Int
+  report_type        String                      @db.VarChar(50)
+  report_period_from DateTime                    @db.Date
+  report_period_to   DateTime                    @db.Date
+  status             String                      @default("DRAFT") @db.VarChar(20)
+  submitted_at       DateTime?                   @db.Timestamptz(6)
+  submitted_by       String?                     @db.Uuid
+  approved_at        DateTime?                   @db.Timestamptz(6)
+  approved_by        String?                     @db.Uuid
+  report_file_url    String?
+  notes              String?
+  created_at         DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                    @default(now()) @db.Timestamptz(6)
+  created_by         String?                     @db.Uuid
+  updated_by         String?                     @db.Uuid
+  deleted_at         DateTime?                   @db.Timestamptz(6)
+  items              annual_waste_report_items[]
+  approved_by_user   auth_users?                 @relation("annual_reports_approved_by", fields: [approved_by], references: [id], onUpdate: NoAction)
+  created_by_user    auth_users?                 @relation("annual_reports_created_by", fields: [created_by], references: [id], onUpdate: NoAction)
+  organizations      organizations               @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  submitted_by_user  auth_users?                 @relation("annual_reports_submitted_by", fields: [submitted_by], references: [id], onUpdate: NoAction)
+  updated_by_user    auth_users?                 @relation("annual_reports_updated_by", fields: [updated_by], references: [id], onUpdate: NoAction)
+
+  @@unique([org_id, fiscal_year, report_type], map: "unique_annual_report_per_year")
+  @@index([org_id], map: "idx_annual_reports_org")
+  @@index([fiscal_year], map: "idx_annual_reports_fiscal_year")
+  @@index([status], map: "idx_annual_reports_status")
+  @@schema("app")
+}
+
+/// 年間廃棄物報告書明細（店舗×業者×廃棄物種別ごとの集計）
+model annual_waste_report_items {
+  id               String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  report_id        String               @db.Uuid
+  store_id         String               @db.Uuid
+  collector_id     String               @db.Uuid
+  waste_type_id    String               @db.Uuid
+  item_label       String               @db.VarChar(255)
+  total_quantity   Decimal              @db.Decimal(10, 2)
+  unit             String               @db.VarChar(10)
+  unit_price       Decimal?             @db.Decimal(10, 2)
+  total_amount     Decimal?             @db.Decimal(12, 2)
+  collection_count Int                  @default(0)
+  notes            String?
+  created_at       DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime             @default(now()) @db.Timestamptz(6)
+  created_by       String?              @db.Uuid
+  updated_by       String?              @db.Uuid
+  deleted_at       DateTime?            @db.Timestamptz(6)
+  collector        collectors           @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_by_user  auth_users?          @relation("annual_report_items_created_by", fields: [created_by], references: [id], onUpdate: NoAction)
+  report           annual_waste_reports @relation(fields: [report_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  store            stores               @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  updated_by_user  auth_users?          @relation("annual_report_items_updated_by", fields: [updated_by], references: [id], onUpdate: NoAction)
+  waste_type       waste_type_masters   @relation(fields: [waste_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([report_id], map: "idx_annual_report_items_report")
+  @@index([store_id], map: "idx_annual_report_items_store")
+  @@index([collector_id], map: "idx_annual_report_items_collector")
+  @@schema("app")
+}
+
+/// Email送信キュー
+model email_queue {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id              String              @db.Uuid
+  to_email            String              @db.VarChar(255)
+  to_name             String              @db.VarChar(255)
+  from_email          String?             @db.VarChar(255)
+  from_name           String?             @db.VarChar(255)
+  subject             String              @db.VarChar(500)
+  body_html           String
+  body_text           String?
+  template_type       email_template_type
+  related_entity_type String?             @db.VarChar(100)
+  related_entity_id   String?             @db.Uuid
+  status              email_queue_status  @default(PENDING)
+  priority            Int                 @default(3)
+  scheduled_at        DateTime            @default(now()) @db.Timestamptz(6)
+  retry_count         Int                 @default(0)
+  max_retries         Int                 @default(3)
+  last_error          String?
+  sent_at             DateTime?           @db.Timestamptz(6)
+  created_at          DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime            @updatedAt @db.Timestamptz(6)
+  email_logs          email_logs[]
+  organizations       organizations       @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([org_id, status, scheduled_at])
+  @@index([status, scheduled_at])
+  @@schema("app")
+}
+
+/// Email送信履歴
+model email_logs {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  queue_id      String?          @db.Uuid
+  org_id        String           @db.Uuid
+  to_email      String           @db.VarChar(255)
+  subject       String           @db.VarChar(500)
+  status        email_log_status
+  resend_id     String?          @db.VarChar(255)
+  resend_status resend_status?
+  smtp_response String?
+  error_message String?
+  opened_at     DateTime?        @db.Timestamptz(6)
+  clicked_at    DateTime?        @db.Timestamptz(6)
+  sent_at       DateTime         @default(now()) @db.Timestamptz(6)
+  created_at    DateTime         @default(now()) @db.Timestamptz(6)
+  organizations organizations    @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  email_queue   email_queue?     @relation(fields: [queue_id], references: [id], onUpdate: NoAction)
+
+  @@index([org_id, sent_at])
+  @@index([resend_id])
+  @@index([queue_id])
+  @@schema("app")
+}
+
+/// 請求設定マスタ
+model billing_settings {
+  org_id            String            @id @db.Uuid
+  tax_rounding_mode tax_rounding_mode @default(FLOOR)
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime          @updatedAt @db.Timestamptz(6)
+  created_by        String?           @db.Uuid
+  updated_by        String?           @db.Uuid
+  users_created_by  auth_users?       @relation("billing_settings_created_by", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organizations     organizations     @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_updated_by  auth_users?       @relation("billing_settings_updated_by", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("app")
+}
+
+/// 手数料ルールマスタ
+model commission_rules {
+  id               String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id           String               @db.Uuid
+  collector_id     String?              @db.Uuid
+  billing_type     String
+  commission_type  commission_calc_type
+  commission_value Decimal              @db.Decimal(10, 2)
+  is_active        Boolean              @default(true)
+  effective_from   DateTime?            @db.Date
+  effective_to     DateTime?            @db.Date
+  notes            String?
+  created_at       DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime             @default(now()) @db.Timestamptz(6)
+  created_by       String
+  updated_by       String
+  deleted_at       DateTime?            @db.Timestamptz(6)
+  collectors       collectors?          @relation(fields: [collector_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations    organizations        @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([org_id])
+  @@index([collector_id])
+  @@index([is_active])
+  @@schema("app")
+}
+
+/// テナント請求書（テナントへの最終請求書）
+model tenant_invoices {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id               String                 @db.Uuid
+  billing_month        DateTime               @db.Date
+  invoice_number       String                 @unique
+  collectors_subtotal  Decimal                @default(0) @db.Decimal(12, 2)
+  collectors_tax       Decimal                @default(0) @db.Decimal(12, 2)
+  collectors_total     Decimal                @default(0) @db.Decimal(12, 2)
+  commission_subtotal  Decimal                @default(0) @db.Decimal(12, 2)
+  commission_tax       Decimal                @default(0) @db.Decimal(12, 2)
+  commission_total     Decimal                @default(0) @db.Decimal(12, 2)
+  grand_subtotal       Decimal                @default(0) @db.Decimal(12, 2)
+  grand_tax            Decimal                @default(0) @db.Decimal(12, 2)
+  grand_total          Decimal                @default(0) @db.Decimal(12, 2)
+  status               tenant_invoice_status  @default(DRAFT)
+  locked_at            DateTime?              @db.Timestamptz(6)
+  locked_by            String?
+  issued_at            DateTime?              @db.Timestamptz(6)
+  paid_at              DateTime?              @db.Timestamptz(6)
+  due_date             DateTime?              @db.Date
+  notes                String?
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  created_by           String
+  updated_by           String
+  deleted_at           DateTime?              @db.Timestamptz(6)
+  tenant_invoice_items tenant_invoice_items[]
+  organizations        organizations          @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([org_id, billing_month], name: "unique_tenant_invoice")
+  @@index([org_id])
+  @@index([billing_month])
+  @@index([status])
+  @@schema("app")
+}
+
+/// テナント請求書明細（編集可能）
+model tenant_invoice_items {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_invoice_id  String             @db.Uuid
+  item_type          invoice_item_type
+  billing_summary_id String?            @db.Uuid
+  collector_id       String?            @db.Uuid
+  item_name          String
+  item_description   String?
+  base_amount        Decimal            @db.Decimal(12, 2)
+  commission_amount  Decimal            @default(0) @db.Decimal(12, 2)
+  subtotal           Decimal            @db.Decimal(12, 2)
+  tax_rate           Decimal            @default(10.00) @db.Decimal(5, 2)
+  tax_amount         Decimal            @db.Decimal(12, 2)
+  total_amount       Decimal            @db.Decimal(12, 2)
+  is_auto_calculated Boolean            @default(true)
+  display_order      Int                @default(1)
+  notes              String?
+  created_at         DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime           @default(now()) @db.Timestamptz(6)
+  billing_summaries  billing_summaries? @relation(fields: [billing_summary_id], references: [id], onUpdate: NoAction)
+  collectors         collectors?        @relation(fields: [collector_id], references: [id], onUpdate: NoAction)
+  tenant_invoices    tenant_invoices    @relation(fields: [tenant_invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([tenant_invoice_id])
+  @@index([billing_summary_id])
+  @@schema("app")
 }
 
 enum aal_level {
@@ -1458,9 +2095,31 @@ enum factor_type {
   @@schema("auth")
 }
 
+enum oauth_authorization_status {
+  pending
+  approved
+  denied
+  expired
+
+  @@schema("auth")
+}
+
+enum oauth_client_type {
+  public
+  confidential
+
+  @@schema("auth")
+}
+
 enum oauth_registration_type {
   dynamic
   manual
+
+  @@schema("auth")
+}
+
+enum oauth_response_type {
+  code
 
   @@schema("auth")
 }
@@ -1577,4 +2236,91 @@ enum unit_type {
   PER_ITEM
 
   @@schema("public")
+}
+
+enum email_queue_status {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  RETRY
+
+  @@schema("app")
+}
+
+enum email_template_type {
+  NOTIFICATION
+  REMINDER
+  ESCALATION
+  REPORT
+
+  @@schema("app")
+}
+
+enum email_log_status {
+  SUCCESS
+  FAILED
+
+  @@schema("app")
+}
+
+enum resend_status {
+  queued
+  sent
+  delivered
+  bounced
+  complained
+
+  @@schema("app")
+}
+
+/// 収集業者請求ステータス
+enum collector_billing_status {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+
+  @@schema("app")
+}
+
+/// テナント請求書ステータス
+enum tenant_invoice_status {
+  DRAFT
+  LOCKED
+  ISSUED
+  PAID
+  CANCELLED
+
+  @@schema("app")
+}
+
+/// 手数料タイプ
+enum commission_calc_type {
+  FIXED_AMOUNT
+  PERCENTAGE
+  ADDITIONAL_FEE
+
+  @@schema("app")
+}
+
+/// テナント請求書明細タイプ
+enum invoice_item_type {
+  COLLECTOR_BILLING
+  COMMISSION
+  MANAGEMENT_FEE
+  OTHER
+
+  @@schema("app")
+}
+
+/// 消費税端数処理方式
+enum tax_rounding_mode {
+  FLOOR
+  CEIL
+  ROUND
+
+  @@schema("app")
 }

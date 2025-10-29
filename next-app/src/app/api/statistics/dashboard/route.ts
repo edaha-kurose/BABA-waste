@@ -9,10 +9,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { getAuthenticatedUser } from '@/lib/auth/session-server';
 
 // バリデーションスキーマ
 const DashboardStatsQuerySchema = z.object({
-  org_id: z.string().uuid('Invalid organization ID'),
+  org_id: z.string().uuid('Invalid organization ID').optional(),
   collector_id: z.string().uuid().optional(),
   from_date: z.string().optional(),
   to_date: z.string().optional(),
@@ -20,18 +21,51 @@ const DashboardStatsQuerySchema = z.object({
 
 // GET /api/statistics/dashboard
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    
-    const params = {
-      org_id: searchParams.get('org_id') || '',
-      collector_id: searchParams.get('collector_id') || undefined,
-      from_date: searchParams.get('from_date') || undefined,
-      to_date: searchParams.get('to_date') || undefined,
-    };
+  const authUser = await getAuthenticatedUser(request);
+  if (!authUser) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
 
-    // バリデーション
-    const validatedParams = DashboardStatsQuerySchema.parse(params);
+  const { searchParams } = new URL(request.url);
+  
+  const params = {
+    org_id: searchParams.get('org_id') || authUser.org_id,
+    collector_id: searchParams.get('collector_id') || undefined,
+    from_date: searchParams.get('from_date') || undefined,
+    to_date: searchParams.get('to_date') || undefined,
+  };
+
+  // バリデーション
+  let validatedParams
+  try {
+    validatedParams = DashboardStatsQuerySchema.parse(params);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ error: '不正なパラメータです' }, { status: 400 });
+  }
+
+  // 権限チェック
+  const targetOrgId = validatedParams.org_id || authUser.org_id;
+  if (!targetOrgId) {
+    return NextResponse.json({ error: '組織IDが必要です' }, { status: 400 });
+  }
+  
+  if (!authUser.isSystemAdmin && !authUser.org_ids.includes(targetOrgId)) {
+    return NextResponse.json(
+      { error: 'この組織の統計を閲覧する権限がありません' },
+      { status: 403 }
+    );
+  }
+
+  // org_idを確定
+  validatedParams.org_id = targetOrgId;
+
+  try {
 
     // 日付範囲のデフォルト（過去6ヶ月）
     const toDate = validatedParams.to_date
@@ -45,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     // 1. 今月の請求サマリー
     const currentMonth = new Date(toDate.getFullYear(), toDate.getMonth(), 1);
-    const currentBillingSummaries = await prisma.billingSummary.findMany({
+    const currentBillingSummaries = await prisma.billing_summaries.findMany({
       where: {
         org_id: validatedParams.org_id,
         billing_month: currentMonth,
@@ -71,34 +105,30 @@ export async function GET(request: NextRequest) {
     );
 
     // 2. 今月の回収実績
-    const currentCollections = await prisma.collection.aggregate({
+    const currentCollections = await prisma.collections.aggregate({
       where: {
         org_id: validatedParams.org_id,
-        actual_pickup_date: {
+        collected_at: {
           gte: currentMonth,
           lt: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
         },
-        status: {
-          in: ['COMPLETED', 'VERIFIED'],
-        },
-        ...(validatedParams.collector_id && { collector_id: validatedParams.collector_id }),
       },
       _count: true,
       _sum: {
-        actual_quantity: true,
+        actual_qty: true,
       },
     });
 
     // 3. アクティブな店舗数
-    const activeStores = await prisma.store.count({
+    const activeStores = await prisma.stores.count({
       where: {
         org_id: validatedParams.org_id,
-        is_active: true,
+        deleted_at: null,
       },
     });
 
     // 4. 今月の収集依頼数
-    const currentRequests = await prisma.collectionRequest.count({
+    const currentRequests = await prisma.collection_requests.count({
       where: {
         org_id: validatedParams.org_id,
         created_at: {
@@ -111,7 +141,7 @@ export async function GET(request: NextRequest) {
 
     // === 月次推移データ取得 ===
 
-    const monthlyBillingTrends = await prisma.billingSummary.findMany({
+    const monthlyBillingTrends = await prisma.billing_summaries.findMany({
       where: {
         org_id: validatedParams.org_id,
         billing_month: {
@@ -173,7 +203,7 @@ export async function GET(request: NextRequest) {
         s.id as store_id,
         s.name as store_name,
         COUNT(DISTINCT c.id) as collection_count,
-        SUM(c.actual_quantity) as total_quantity,
+        SUM(c.actual_qty) as total_quantity,
         SUM(bi.amount) as total_amount
       FROM app.stores s
       LEFT JOIN app.collections c ON c.store_id = s.id 
@@ -214,7 +244,7 @@ export async function GET(request: NextRequest) {
       SELECT 
         COALESCE(wtm.waste_type_name, 'その他') as waste_type_name,
         COUNT(DISTINCT c.id) as collection_count,
-        SUM(c.actual_quantity) as total_quantity,
+        SUM(c.actual_qty) as total_quantity,
         SUM(bi.amount) as total_amount
       FROM app.collections c
       LEFT JOIN app.waste_type_masters wtm ON wtm.id = c.waste_type_id
@@ -248,7 +278,7 @@ export async function GET(request: NextRequest) {
           current_month_billing: currentMonthBilling,
           current_month_collections: {
             count: currentCollections._count,
-            total_quantity: currentCollections._sum.actual_quantity || 0,
+            total_quantity: currentCollections._sum.actual_qty || 0,
           },
           active_stores: activeStores,
           current_month_requests: currentRequests,

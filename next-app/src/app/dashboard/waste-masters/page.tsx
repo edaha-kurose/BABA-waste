@@ -25,6 +25,7 @@ import {
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useUser } from '@/lib/auth/session';
 
 const { TabPane } = Tabs;
 
@@ -66,31 +67,69 @@ const BILLING_TYPE_OPTIONS = [
 ];
 
 export default function WasteMastersPage() {
+  const { user, userOrg } = useUser();
   const [wasteTypeMasters, setWasteTypeMasters] = useState<WasteTypeMaster[]>([]);
+  const [collectors, setCollectors] = useState<any[]>([]);
+  const [jwnetWasteCodes, setJwnetWasteCodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [editingRecord, setEditingRecord] = useState<WasteTypeMaster | null>(null);
-  const [selectedCollectorId, setSelectedCollectorId] = useState<string>('collector-1');
+  const [selectedCollectorId, setSelectedCollectorId] = useState<string>('');
   const [form] = Form.useForm();
 
-  // Mock: 組織ID（実際はログインユーザーから取得）
-  const orgId = 'mock-org-id';
+  const orgId = userOrg?.id;
+
+  // 業者リストを取得
+  useEffect(() => {
+    const fetchCollectors = async () => {
+      if (!orgId) return;
+      try {
+        const response = await fetch('/api/collectors');
+        if (!response.ok) throw new Error('Failed to fetch collectors');
+        const data = await response.json();
+        setCollectors(data.data || []);
+        if (data.data && data.data.length > 0) {
+          setSelectedCollectorId(data.data[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching collectors:', error);
+        message.error('業者リストの取得に失敗しました');
+      }
+    };
+    fetchCollectors();
+  }, [orgId]);
+
+  // JWNETコードマスターを取得
+  useEffect(() => {
+    const fetchJwnetWasteCodes = async () => {
+      try {
+        const response = await fetch('/api/jwnet-waste-codes');
+        if (!response.ok) throw new Error('Failed to fetch JWNET waste codes');
+        const data = await response.json();
+        setJwnetWasteCodes(data || []);
+      } catch (error) {
+        console.error('Error fetching JWNET waste codes:', error);
+        message.error('JWNETコードマスターの取得に失敗しました');
+      }
+    };
+    fetchJwnetWasteCodes();
+  }, []);
 
   // 廃棄物種別マスターを取得
   const fetchWasteTypeMasters = async () => {
-    if (!selectedCollectorId) return;
+    if (!selectedCollectorId || !orgId) return;
 
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/waste-type-masters?org_id=${orgId}&collector_id=${selectedCollectorId}`
+        `/api/waste-type-masters?collector_id=${selectedCollectorId}`
       );
       if (!response.ok) {
         throw new Error('Failed to fetch waste type masters');
       }
-      const data = await response.json();
-      setWasteTypeMasters(data);
+      const result = await response.json();
+      setWasteTypeMasters(result.data || []);
     } catch (error) {
       console.error('Error fetching waste type masters:', error);
       message.error('廃棄物種別マスターの取得に失敗しました');
@@ -113,13 +152,14 @@ export default function WasteMastersPage() {
       form.setFieldsValue({
         waste_type_code: record.waste_type_code,
         waste_type_name: record.waste_type_name,
+        jwnet_waste_code_id: record.jwnet_waste_code_id,     // ✨ ID追加
+        jwnet_waste_code: record.jwnet_waste_code,
         waste_category: record.waste_category,
         waste_classification: record.waste_classification,
-        jwnet_waste_code: record.jwnet_waste_code,
         unit_code: record.unit_code,
         unit_price: record.unit_price,
-        billing_category: record.billing_category,           // ✨ 新規
-        billing_type_default: record.billing_type_default,   // ✨ 新規
+        billing_category: record.billing_category,
+        billing_type_default: record.billing_type_default,
         description: record.description,
         is_active: record.is_active,
       });
@@ -133,6 +173,21 @@ export default function WasteMastersPage() {
     setIsModalOpen(false);
     form.resetFields();
     setEditingRecord(null);
+  };
+
+  // JWNETコード選択時の処理
+  const handleJwnetCodeChange = (jwnetWasteCodeId: string) => {
+    const selectedCode = jwnetWasteCodes.find((code) => code.id === jwnetWasteCodeId);
+    if (selectedCode) {
+      // 関連情報を自動セット
+      form.setFieldsValue({
+        jwnet_waste_code_id: selectedCode.id,
+        jwnet_waste_code: selectedCode.waste_code,
+        waste_category: selectedCode.waste_category,
+        waste_classification: selectedCode.waste_type,
+        unit_code: selectedCode.unit_code,
+      });
+    }
   };
 
   // 作成・更新
@@ -304,8 +359,19 @@ export default function WasteMastersPage() {
 
       {/* ✨ 説明 */}
       <Alert
-        message="請求書Excel出力用の分類設定"
-        description="各廃棄物の請求書出力時の列（G列、H列など）と、デフォルトの請求種別（固定/従量）を設定できます。"
+        message="📋 廃棄物種別マスター：業者ごとの取り扱い廃棄物を管理"
+        description={
+          <div>
+            <p><strong>このマスターの用途:</strong></p>
+            <ul style={{ marginLeft: 20, marginBottom: 8 }}>
+              <li>🔍 <strong>JWNETコード選択</strong>: JWNET登録済みの廃棄物コードから選択（カテゴリー・単位が自動入力）</li>
+              <li>📊 <strong>請求書出力列の設定</strong>: Excel出力時の表示列（D列〜AH列）を指定</li>
+              <li>💰 <strong>請求種別の設定</strong>: デフォルト請求方法（固定/従量/その他）を設定</li>
+              <li>💵 <strong>単価設定</strong>: 業者ごとの取り扱い単価を登録</li>
+            </ul>
+            <p style={{ marginTop: 8 }}>※ 先に「<a href="/dashboard/jwnet-waste-codes" target="_blank">JWNET廃棄物コードマスター</a>」でコードを登録してください</p>
+          </div>
+        }
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
@@ -316,13 +382,16 @@ export default function WasteMastersPage() {
         <Space>
           <label>収集業者:</label>
           <Select
-            style={{ width: 200 }}
+            style={{ width: 300 }}
             value={selectedCollectorId}
             onChange={setSelectedCollectorId}
+            placeholder="業者を選択してください"
           >
-            <Select.Option value="collector-1">収集業者A</Select.Option>
-            <Select.Option value="collector-2">収集業者B</Select.Option>
-            <Select.Option value="collector-3">収集業者C</Select.Option>
+            {collectors.map((collector) => (
+              <Select.Option key={collector.id} value={collector.id}>
+                {collector.company_name}
+              </Select.Option>
+            ))}
           </Select>
           <Button
             type="primary"
@@ -405,42 +474,52 @@ export default function WasteMastersPage() {
             </Select>
           </Form.Item>
 
+          {/* ✨ JWNETコードをマスターから選択 */}
+          <Form.Item
+            name="jwnet_waste_code_id"
+            label="🔍 JWNETコード（マスターから選択）"
+            rules={[{ required: true, message: 'JWNETコードを選択してください' }]}
+            tooltip="JWNETに登録されている廃棄物コードを選択します。選択すると関連情報が自動入力されます"
+          >
+            <Select
+              placeholder="JWNETコードを検索・選択"
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              onChange={handleJwnetCodeChange}
+              options={jwnetWasteCodes.map((code) => ({
+                value: code.id,
+                label: `${code.waste_code} - ${code.waste_name} (${code.waste_category})`,
+              }))}
+            />
+          </Form.Item>
+
+          {/* 以下は自動入力（読み取り専用） */}
+          <Form.Item name="jwnet_waste_code" hidden>
+            <Input />
+          </Form.Item>
+
           <Form.Item
             name="waste_category"
-            label="カテゴリー"
-            rules={[{ required: true, message: 'カテゴリーを入力してください' }]}
+            label="カテゴリー（自動入力）"
           >
-            <Input placeholder="例: 一般廃棄物" />
+            <Input disabled placeholder="JWNETコード選択後に自動入力" />
           </Form.Item>
 
           <Form.Item
             name="waste_classification"
-            label="分類"
-            rules={[{ required: true, message: '分類を入力してください' }]}
+            label="分類（自動入力）"
           >
-            <Input placeholder="例: 可燃ゴミ" />
-          </Form.Item>
-
-          <Form.Item
-            name="jwnet_waste_code"
-            label="JWNETコード"
-            rules={[{ required: true, message: 'JWNETコードを入力してください' }]}
-          >
-            <Input placeholder="例: 01" />
+            <Input disabled placeholder="JWNETコード選択後に自動入力" />
           </Form.Item>
 
           <Form.Item
             name="unit_code"
-            label="単位コード"
-            rules={[{ required: true, message: '単位コードを入力してください' }]}
+            label="単位コード（自動入力）"
           >
-            <Select placeholder="単位を選択">
-              <Select.Option value="KG">KG</Select.Option>
-              <Select.Option value="T">T</Select.Option>
-              <Select.Option value="M3">M3</Select.Option>
-              <Select.Option value="L">L</Select.Option>
-              <Select.Option value="PCS">PCS</Select.Option>
-            </Select>
+            <Input disabled placeholder="JWNETコード選択後に自動入力" />
           </Form.Item>
 
           <Form.Item name="unit_price" label="単価（円）">

@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Pre-commit checks..."
+
+# Schema同期チェック
+echo "📊 Checking schema sync..."
+pnpm check:schema-sync || {
+  echo "❌ Schema sync check failed"
+  exit 1
+}
+
+# 外部キー制約チェック
+echo "🔗 Checking foreign keys..."
+pnpm check:foreign-keys || {
+  echo "❌ Foreign key check failed"
+  exit 1
+}
+
+# TypeScript型チェック
+echo "📝 Running TypeScript type check..."
+pnpm typecheck || {
+  echo "❌ Type check failed"
+  exit 1
+}
+
+# ESLint
+echo "🔍 Running ESLint..."
+pnpm lint || {
+  echo "❌ Lint failed"
+  exit 1
+}
+
+echo "✅ All pre-commit checks passed!"
+
+
+
+
+

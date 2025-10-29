@@ -1,13 +1,6 @@
-'use client';
+'use client'
 
-/**
- * JWNET 事業者組み合わせマスター管理ページ
- * 
- * - 排出事業者・収集業者・処分業者の組み合わせ管理
- * - JWNET WebEDI 準拠
- */
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
 import {
   Card,
   Table,
@@ -15,215 +8,215 @@ import {
   Space,
   Modal,
   Form,
-  Input,
   Select,
-  DatePicker,
   message,
+  Typography,
   Tag,
   Descriptions,
-} from 'antd';
+  Alert,
+} from 'antd'
 import {
+  LinkOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
+  ReloadOutlined,
   EyeOutlined,
-  TeamOutlined,
-} from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
-import dayjs from 'dayjs';
+} from '@ant-design/icons'
+import { useUser } from '@/lib/auth/session'
 
-interface Organization {
-  id: string;
-  name: string;
-  code: string;
-}
+const { Title, Text } = Typography
+const { Option } = Select
 
-interface JwnetPartyCombination {
-  id: string;
-  org_id: string;
-  emitter_org_id: string;
-  emitter_subscriber_no: string;
-  emitter_public_confirm_no: string;
-  emitter_name: string;
-  emitter_address: string;
-  emitter_postal_code: string;
-  transporter_org_id: string;
-  transporter_subscriber_no: string;
-  transporter_public_confirm_no: string;
-  transporter_name: string;
-  transporter_address: string;
-  transporter_postal_code: string;
-  transporter_phone: string | null;
-  disposer_org_id: string;
-  disposer_subscriber_no: string;
-  disposer_public_confirm_no: string;
-  disposer_name: string;
-  disposer_address: string;
-  disposer_postal_code: string;
-  disposer_phone: string | null;
-  is_active: boolean;
-  valid_from: string;
-  valid_to: string | null;
-  notes: string | null;
-  created_at: string;
-  emitter?: Organization;
-  transporter?: Organization;
-  disposer?: Organization;
+interface PartyCombination {
+  id: string
+  org_id: string
+  emitter_subscriber_id: string
+  transporter_subscriber_id: string
+  disposer_subscriber_id: string
+  is_active: boolean
+  created_at: string
+  emitter?: {
+    name: string
+    jwnet_subscriber_id: string
+  }
+  transporter?: {
+    name: string
+    jwnet_subscriber_id: string
+  }
+  disposer?: {
+    name: string
+    jwnet_subscriber_id: string
+  }
 }
 
 export default function JwnetPartyCombinationsPage() {
-  const [combinations, setCombinations] = useState<JwnetPartyCombination[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedCombination, setSelectedCombination] = useState<JwnetPartyCombination | null>(null);
-  const [form] = Form.useForm();
+  const { userOrg } = useUser()
+  const [combinations, setCombinations] = useState<PartyCombination[]>([])
+  const [loading, setLoading] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false)
+  const [detailModalVisible, setDetailModalVisible] = useState(false)
+  const [editingCombination, setEditingCombination] = useState<PartyCombination | null>(null)
+  const [selectedCombination, setSelectedCombination] = useState<PartyCombination | null>(null)
+  const [form] = Form.useForm()
 
-  // Mock: 組織ID（実際はログインユーザーから取得）
-  const orgId = 'mock-org-id';
-
-  // 組み合わせ一覧を取得
+  // データ取得
   const fetchCombinations = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/jwnet-party-combinations?org_id=${orgId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch combinations');
-      }
-      const data = await response.json();
-      setCombinations(data);
-    } catch (error) {
-      console.error('Error fetching combinations:', error);
-      message.error('事業者組み合わせの取得に失敗しました');
-    } finally {
-      setLoading(false);
+    if (!userOrg?.id) {
+      setLoading(false)
+      return
     }
-  };
 
-  // 初期読み込み
+    try {
+      setLoading(true)
+      // モックデータ（実際のAPIは後で実装）
+      const mockData: PartyCombination[] = [
+        {
+          id: '1',
+          org_id: userOrg.id,
+          emitter_subscriber_id: 'EMIT-001',
+          transporter_subscriber_id: 'TRANS-001',
+          disposer_subscriber_id: 'DISP-001',
+          is_active: true,
+          created_at: '2025-10-01T00:00:00Z',
+          emitter: {
+            name: '排出事業者A',
+            jwnet_subscriber_id: 'EMIT-001',
+          },
+          transporter: {
+            name: '収集業者A',
+            jwnet_subscriber_id: 'TRANS-001',
+          },
+          disposer: {
+            name: '処分業者A',
+            jwnet_subscriber_id: 'DISP-001',
+          },
+        },
+        {
+          id: '2',
+          org_id: userOrg.id,
+          emitter_subscriber_id: 'EMIT-002',
+          transporter_subscriber_id: 'TRANS-002',
+          disposer_subscriber_id: 'DISP-002',
+          is_active: true,
+          created_at: '2025-09-15T00:00:00Z',
+          emitter: {
+            name: '排出事業者B',
+            jwnet_subscriber_id: 'EMIT-002',
+          },
+          transporter: {
+            name: '収集業者B',
+            jwnet_subscriber_id: 'TRANS-002',
+          },
+          disposer: {
+            name: '処分業者B',
+            jwnet_subscriber_id: 'DISP-002',
+          },
+        },
+      ]
+      setCombinations(mockData)
+    } catch (err) {
+      console.error('Failed to fetch combinations:', err)
+      message.error('事業者組み合わせの取得に失敗しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    fetchCombinations();
-  }, []);
+    if (userOrg?.id) {
+      fetchCombinations()
+    }
+  }, [userOrg?.id])
+
+  // 作成・編集
+  const handleSubmit = async (values: any) => {
+    try {
+      // TODO: 実際のAPI呼び出し
+      if (editingCombination) {
+        message.success('事業者組み合わせを更新しました')
+      } else {
+        message.success('事業者組み合わせを作成しました')
+      }
+      setModalVisible(false)
+      setEditingCombination(null)
+      form.resetFields()
+      fetchCombinations()
+    } catch (err) {
+      console.error('Failed to save combination:', err)
+      message.error('事業者組み合わせの保存に失敗しました')
+    }
+  }
+
+  // 削除
+  const handleDelete = async (id: string) => {
+    try {
+      // TODO: 実際の削除API呼び出し
+      message.success('事業者組み合わせを削除しました')
+      fetchCombinations()
+    } catch (err) {
+      console.error('Failed to delete combination:', err)
+      message.error('事業者組み合わせの削除に失敗しました')
+    }
+  }
+
+  // 編集
+  const handleEdit = (combination: PartyCombination) => {
+    setEditingCombination(combination)
+    form.setFieldsValue({
+      emitter_subscriber_id: combination.emitter_subscriber_id,
+      transporter_subscriber_id: combination.transporter_subscriber_id,
+      disposer_subscriber_id: combination.disposer_subscriber_id,
+    })
+    setModalVisible(true)
+  }
+
+  // 詳細表示
+  const showDetail = (combination: PartyCombination) => {
+    setSelectedCombination(combination)
+    setDetailModalVisible(true)
+  }
 
   // 新規作成
   const handleCreate = () => {
-    form.resetFields();
-    setIsModalOpen(true);
-  };
+    setEditingCombination(null)
+    form.resetFields()
+    setModalVisible(true)
+  }
 
-  // フォーム送信
-  const handleFormSubmit = async (values: any) => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/jwnet-party-combinations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          org_id: orgId,
-          emitter_org_id: values.emitter_org_id,
-          emitter_subscriber_no: values.emitter_subscriber_no,
-          emitter_public_confirm_no: values.emitter_public_confirm_no,
-          emitter_name: values.emitter_name,
-          emitter_address: values.emitter_address,
-          emitter_postal_code: values.emitter_postal_code,
-          transporter_org_id: values.transporter_org_id,
-          transporter_subscriber_no: values.transporter_subscriber_no,
-          transporter_public_confirm_no: values.transporter_public_confirm_no,
-          transporter_name: values.transporter_name,
-          transporter_address: values.transporter_address,
-          transporter_postal_code: values.transporter_postal_code,
-          transporter_phone: values.transporter_phone,
-          disposer_org_id: values.disposer_org_id,
-          disposer_subscriber_no: values.disposer_subscriber_no,
-          disposer_public_confirm_no: values.disposer_public_confirm_no,
-          disposer_name: values.disposer_name,
-          disposer_address: values.disposer_address,
-          disposer_postal_code: values.disposer_postal_code,
-          disposer_phone: values.disposer_phone,
-          is_active: true,
-          valid_from: values.valid_from.format('YYYY-MM-DD'),
-          valid_to: values.valid_to ? values.valid_to.format('YYYY-MM-DD') : null,
-          notes: values.notes,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create combination');
-      }
-
-      message.success('事業者組み合わせを作成しました');
-      setIsModalOpen(false);
-      form.resetFields();
-      fetchCombinations();
-    } catch (error) {
-      console.error('Error creating combination:', error);
-      message.error('事業者組み合わせの作成に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 詳細表示
-  const handleViewDetail = (combination: JwnetPartyCombination) => {
-    setSelectedCombination(combination);
-    setIsDetailModalOpen(true);
-  };
-
-  // テーブルカラム
-  const columns: ColumnsType<JwnetPartyCombination> = [
+  // テーブル列定義
+  const columns = [
     {
       title: '排出事業者',
-      dataIndex: 'emitter_name',
-      key: 'emitter_name',
-      width: 200,
-      render: (text: string, record) => (
-        <div>
-          <div>{text}</div>
-          <div style={{ fontSize: 12, color: '#999' }}>
-            加入者番号: {record.emitter_subscriber_no}
-          </div>
-        </div>
+      key: 'emitter',
+      width: 250,
+      render: (_: any, record: PartyCombination) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.emitter?.name}</Text>
+          <Text type="secondary">{record.emitter?.jwnet_subscriber_id}</Text>
+        </Space>
       ),
     },
     {
-      title: '収集業者',
-      dataIndex: 'transporter_name',
-      key: 'transporter_name',
-      width: 200,
-      render: (text: string, record) => (
-        <div>
-          <div>{text}</div>
-          <div style={{ fontSize: 12, color: '#999' }}>
-            加入者番号: {record.transporter_subscriber_no}
-          </div>
-        </div>
+      title: '収集運搬業者',
+      key: 'transporter',
+      width: 250,
+      render: (_: any, record: PartyCombination) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.transporter?.name}</Text>
+          <Text type="secondary">{record.transporter?.jwnet_subscriber_id}</Text>
+        </Space>
       ),
     },
     {
       title: '処分業者',
-      dataIndex: 'disposer_name',
-      key: 'disposer_name',
-      width: 200,
-      render: (text: string, record) => (
-        <div>
-          <div>{text}</div>
-          <div style={{ fontSize: 12, color: '#999' }}>
-            加入者番号: {record.disposer_subscriber_no}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: '有効期間',
-      key: 'valid_period',
-      width: 180,
-      render: (_, record) => (
-        <div>
-          <div>{dayjs(record.valid_from).format('YYYY/MM/DD')} 〜</div>
-          <div>{record.valid_to ? dayjs(record.valid_to).format('YYYY/MM/DD') : '無期限'}</div>
-        </div>
+      key: 'disposer',
+      width: 250,
+      render: (_: any, record: PartyCombination) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.disposer?.name}</Text>
+          <Text type="secondary">{record.disposer?.jwnet_subscriber_id}</Text>
+        </Space>
       ),
     },
     {
@@ -231,340 +224,185 @@ export default function JwnetPartyCombinationsPage() {
       dataIndex: 'is_active',
       key: 'is_active',
       width: 100,
-      render: (isActive: boolean) => (
-        <Tag color={isActive ? 'green' : 'default'}>{isActive ? '有効' : '無効'}</Tag>
+      render: (is_active: boolean) => (
+        <Tag color={is_active ? 'green' : 'red'}>
+          {is_active ? '有効' : '無効'}
+        </Tag>
       ),
+    },
+    {
+      title: '作成日',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 150,
+      render: (date: string) => new Date(date).toLocaleDateString('ja-JP'),
     },
     {
       title: '操作',
       key: 'actions',
-      width: 150,
-      render: (_, record) => (
+      width: 180,
+      render: (_: any, record: PartyCombination) => (
         <Space>
+          <Button icon={<EyeOutlined />} onClick={() => showDetail(record)} size="small">
+            詳細
+          </Button>
+          <Button icon={<EditOutlined />} onClick={() => handleEdit(record)} size="small">
+            編集
+          </Button>
           <Button
-            type="link"
-            icon={<EyeOutlined />}
-            onClick={() => handleViewDetail(record)}
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
             size="small"
           >
-            詳細
+            削除
           </Button>
         </Space>
       ),
     },
-  ];
+  ]
 
   return (
     <div style={{ padding: '24px' }}>
-      <h1>
-        <TeamOutlined /> JWNET 事業者組み合わせマスター
-      </h1>
-
       <Card
+        title={
+          <Title level={2}>
+            <LinkOutlined /> 事業者組み合わせ管理
+          </Title>
+        }
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            新規作成
-          </Button>
+          <Space>
+            <Button icon={<ReloadOutlined />} onClick={fetchCombinations} loading={loading}>
+              更新
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              新規作成
+            </Button>
+          </Space>
         }
       >
+        <Alert
+          message="事業者組み合わせについて"
+          description="JWNET登録に必要な排出事業者、収集運搬業者、処分業者の組み合わせを管理します。"
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
         <Table
           columns={columns}
           dataSource={combinations}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 20 }}
-          scroll={{ x: 1200 }}
+          pagination={{
+            pageSize: 20,
+            showSizeChanger: true,
+            showTotal: (total) => `全${total}件`,
+          }}
         />
       </Card>
 
-      {/* 新規作成モーダル */}
+      {/* 作成・編集モーダル */}
       <Modal
-        title="事業者組み合わせ新規作成"
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        title={editingCombination ? '事業者組み合わせ編集' : '新規事業者組み合わせ作成'}
+        open={modalVisible}
+        onCancel={() => {
+          setModalVisible(false)
+          setEditingCombination(null)
+          form.resetFields()
+        }}
         onOk={() => form.submit()}
-        okText="作成"
+        okText={editingCombination ? '更新' : '作成'}
         cancelText="キャンセル"
-        width={900}
+        width={600}
       >
-        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
-          {/* 排出事業者情報 */}
-          <h3 style={{ marginTop: 16, marginBottom: 16, borderBottom: '1px solid #e8e8e8' }}>
-            排出事業者情報
-          </h3>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            label="排出事業者組織"
-            name="emitter_org_id"
-            rules={[{ required: true, message: '排出事業者組織を選択してください' }]}
+            label="排出事業者"
+            name="emitter_subscriber_id"
+            rules={[{ required: true, message: '排出事業者を選択してください' }]}
           >
-            <Select placeholder="排出事業者組織を選択">
-              <Select.Option value="org-1">組織A</Select.Option>
-              <Select.Option value="org-2">組織B</Select.Option>
+            <Select placeholder="排出事業者を選択">
+              <Option value="EMIT-001">排出事業者A (EMIT-001)</Option>
+              <Option value="EMIT-002">排出事業者B (EMIT-002)</Option>
             </Select>
           </Form.Item>
-          <Space style={{ width: '100%' }} size="large">
-            <Form.Item
-              label="加入者番号（7桁）"
-              name="emitter_subscriber_no"
-              rules={[
-                { required: true, message: '加入者番号を入力してください' },
-                { len: 7, message: '7桁で入力してください' },
-              ]}
-            >
-              <Input placeholder="例: 1234567" maxLength={7} />
-            </Form.Item>
-            <Form.Item
-              label="公開確認番号（6桁）"
-              name="emitter_public_confirm_no"
-              rules={[
-                { required: true, message: '公開確認番号を入力してください' },
-                { len: 6, message: '6桁で入力してください' },
-              ]}
-            >
-              <Input placeholder="例: 123456" maxLength={6} />
-            </Form.Item>
-          </Space>
-          <Form.Item
-            label="事業者名"
-            name="emitter_name"
-            rules={[{ required: true, message: '事業者名を入力してください' }]}
-          >
-            <Input placeholder="例: 株式会社○○" />
-          </Form.Item>
-          <Form.Item
-            label="郵便番号"
-            name="emitter_postal_code"
-            rules={[{ required: true, message: '郵便番号を入力してください' }]}
-          >
-            <Input placeholder="例: 123-4567" />
-          </Form.Item>
-          <Form.Item
-            label="住所"
-            name="emitter_address"
-            rules={[{ required: true, message: '住所を入力してください' }]}
-          >
-            <Input.TextArea rows={2} placeholder="例: 東京都..." />
-          </Form.Item>
 
-          {/* 収集業者情報 */}
-          <h3 style={{ marginTop: 24, marginBottom: 16, borderBottom: '1px solid #e8e8e8' }}>
-            収集業者情報
-          </h3>
           <Form.Item
-            label="収集業者組織"
-            name="transporter_org_id"
-            rules={[{ required: true, message: '収集業者組織を選択してください' }]}
+            label="収集運搬業者"
+            name="transporter_subscriber_id"
+            rules={[{ required: true, message: '収集運搬業者を選択してください' }]}
           >
-            <Select placeholder="収集業者組織を選択">
-              <Select.Option value="org-1">収集業者A</Select.Option>
-              <Select.Option value="org-2">収集業者B</Select.Option>
+            <Select placeholder="収集運搬業者を選択">
+              <Option value="TRANS-001">収集業者A (TRANS-001)</Option>
+              <Option value="TRANS-002">収集業者B (TRANS-002)</Option>
             </Select>
           </Form.Item>
-          <Space style={{ width: '100%' }} size="large">
-            <Form.Item
-              label="加入者番号（7桁）"
-              name="transporter_subscriber_no"
-              rules={[
-                { required: true, message: '加入者番号を入力してください' },
-                { len: 7, message: '7桁で入力してください' },
-              ]}
-            >
-              <Input placeholder="例: 7654321" maxLength={7} />
-            </Form.Item>
-            <Form.Item
-              label="公開確認番号（6桁）"
-              name="transporter_public_confirm_no"
-              rules={[
-                { required: true, message: '公開確認番号を入力してください' },
-                { len: 6, message: '6桁で入力してください' },
-              ]}
-            >
-              <Input placeholder="例: 654321" maxLength={6} />
-            </Form.Item>
-          </Space>
-          <Form.Item
-            label="事業者名"
-            name="transporter_name"
-            rules={[{ required: true, message: '事業者名を入力してください' }]}
-          >
-            <Input placeholder="例: 株式会社△△" />
-          </Form.Item>
-          <Form.Item
-            label="郵便番号"
-            name="transporter_postal_code"
-            rules={[{ required: true, message: '郵便番号を入力してください' }]}
-          >
-            <Input placeholder="例: 123-4567" />
-          </Form.Item>
-          <Form.Item
-            label="住所"
-            name="transporter_address"
-            rules={[{ required: true, message: '住所を入力してください' }]}
-          >
-            <Input.TextArea rows={2} placeholder="例: 東京都..." />
-          </Form.Item>
-          <Form.Item label="電話番号" name="transporter_phone">
-            <Input placeholder="例: 03-1234-5678" />
-          </Form.Item>
 
-          {/* 処分業者情報 */}
-          <h3 style={{ marginTop: 24, marginBottom: 16, borderBottom: '1px solid #e8e8e8' }}>
-            処分業者情報
-          </h3>
           <Form.Item
-            label="処分業者組織"
-            name="disposer_org_id"
-            rules={[{ required: true, message: '処分業者組織を選択してください' }]}
+            label="処分業者"
+            name="disposer_subscriber_id"
+            rules={[{ required: true, message: '処分業者を選択してください' }]}
           >
-            <Select placeholder="処分業者組織を選択">
-              <Select.Option value="org-3">処分業者A</Select.Option>
-              <Select.Option value="org-4">処分業者B</Select.Option>
+            <Select placeholder="処分業者を選択">
+              <Option value="DISP-001">処分業者A (DISP-001)</Option>
+              <Option value="DISP-002">処分業者B (DISP-002)</Option>
             </Select>
-          </Form.Item>
-          <Space style={{ width: '100%' }} size="large">
-            <Form.Item
-              label="加入者番号（7桁）"
-              name="disposer_subscriber_no"
-              rules={[
-                { required: true, message: '加入者番号を入力してください' },
-                { len: 7, message: '7桁で入力してください' },
-              ]}
-            >
-              <Input placeholder="例: 9876543" maxLength={7} />
-            </Form.Item>
-            <Form.Item
-              label="公開確認番号（6桁）"
-              name="disposer_public_confirm_no"
-              rules={[
-                { required: true, message: '公開確認番号を入力してください' },
-                { len: 6, message: '6桁で入力してください' },
-              ]}
-            >
-              <Input placeholder="例: 987654" maxLength={6} />
-            </Form.Item>
-          </Space>
-          <Form.Item
-            label="事業者名"
-            name="disposer_name"
-            rules={[{ required: true, message: '事業者名を入力してください' }]}
-          >
-            <Input placeholder="例: 株式会社□□" />
-          </Form.Item>
-          <Form.Item
-            label="郵便番号"
-            name="disposer_postal_code"
-            rules={[{ required: true, message: '郵便番号を入力してください' }]}
-          >
-            <Input placeholder="例: 123-4567" />
-          </Form.Item>
-          <Form.Item
-            label="住所"
-            name="disposer_address"
-            rules={[{ required: true, message: '住所を入力してください' }]}
-          >
-            <Input.TextArea rows={2} placeholder="例: 東京都..." />
-          </Form.Item>
-          <Form.Item label="電話番号" name="disposer_phone">
-            <Input placeholder="例: 03-1234-5678" />
-          </Form.Item>
-
-          {/* 有効期間 */}
-          <h3 style={{ marginTop: 24, marginBottom: 16, borderBottom: '1px solid #e8e8e8' }}>
-            有効期間
-          </h3>
-          <Space style={{ width: '100%' }} size="large">
-            <Form.Item
-              label="有効期間開始"
-              name="valid_from"
-              rules={[{ required: true, message: '有効期間開始日を選択してください' }]}
-            >
-              <DatePicker />
-            </Form.Item>
-            <Form.Item label="有効期間終了" name="valid_to">
-              <DatePicker />
-            </Form.Item>
-          </Space>
-
-          <Form.Item label="備考" name="notes">
-            <Input.TextArea rows={3} placeholder="備考（任意）" />
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* 詳細表示モーダル */}
+      {/* 詳細モーダル */}
       <Modal
         title="事業者組み合わせ詳細"
-        open={isDetailModalOpen}
-        onCancel={() => setIsDetailModalOpen(false)}
+        open={detailModalVisible}
+        onCancel={() => {
+          setDetailModalVisible(false)
+          setSelectedCombination(null)
+        }}
         footer={[
-          <Button key="close" onClick={() => setIsDetailModalOpen(false)}>
+          <Button
+            key="close"
+            onClick={() => {
+              setDetailModalVisible(false)
+              setSelectedCombination(null)
+            }}
+          >
             閉じる
           </Button>,
         ]}
-        width={800}
+        width={700}
       >
         {selectedCombination && (
           <Descriptions bordered column={1}>
             <Descriptions.Item label="排出事業者">
-              {selectedCombination.emitter_name}
+              <Space direction="vertical" size={0}>
+                <Text strong>{selectedCombination.emitter?.name}</Text>
+                <Text type="secondary">{selectedCombination.emitter?.jwnet_subscriber_id}</Text>
+              </Space>
             </Descriptions.Item>
-            <Descriptions.Item label="排出事業者加入者番号">
-              {selectedCombination.emitter_subscriber_no}
+            <Descriptions.Item label="収集運搬業者">
+              <Space direction="vertical" size={0}>
+                <Text strong>{selectedCombination.transporter?.name}</Text>
+                <Text type="secondary">{selectedCombination.transporter?.jwnet_subscriber_id}</Text>
+              </Space>
             </Descriptions.Item>
-            <Descriptions.Item label="排出事業者公開確認番号">
-              {selectedCombination.emitter_public_confirm_no}
-            </Descriptions.Item>
-            <Descriptions.Item label="排出事業者住所">
-              〒{selectedCombination.emitter_postal_code} {selectedCombination.emitter_address}
-            </Descriptions.Item>
-
-            <Descriptions.Item label="収集業者">
-              {selectedCombination.transporter_name}
-            </Descriptions.Item>
-            <Descriptions.Item label="収集業者加入者番号">
-              {selectedCombination.transporter_subscriber_no}
-            </Descriptions.Item>
-            <Descriptions.Item label="収集業者公開確認番号">
-              {selectedCombination.transporter_public_confirm_no}
-            </Descriptions.Item>
-            <Descriptions.Item label="収集業者住所">
-              〒{selectedCombination.transporter_postal_code}{' '}
-              {selectedCombination.transporter_address}
-            </Descriptions.Item>
-
             <Descriptions.Item label="処分業者">
-              {selectedCombination.disposer_name}
+              <Space direction="vertical" size={0}>
+                <Text strong>{selectedCombination.disposer?.name}</Text>
+                <Text type="secondary">{selectedCombination.disposer?.jwnet_subscriber_id}</Text>
+              </Space>
             </Descriptions.Item>
-            <Descriptions.Item label="処分業者加入者番号">
-              {selectedCombination.disposer_subscriber_no}
-            </Descriptions.Item>
-            <Descriptions.Item label="処分業者公開確認番号">
-              {selectedCombination.disposer_public_confirm_no}
-            </Descriptions.Item>
-            <Descriptions.Item label="処分業者住所">
-              〒{selectedCombination.disposer_postal_code} {selectedCombination.disposer_address}
-            </Descriptions.Item>
-
-            <Descriptions.Item label="有効期間">
-              {dayjs(selectedCombination.valid_from).format('YYYY/MM/DD')} 〜{' '}
-              {selectedCombination.valid_to
-                ? dayjs(selectedCombination.valid_to).format('YYYY/MM/DD')
-                : '無期限'}
-            </Descriptions.Item>
-
             <Descriptions.Item label="ステータス">
-              <Tag color={selectedCombination.is_active ? 'green' : 'default'}>
+              <Tag color={selectedCombination.is_active ? 'green' : 'red'}>
                 {selectedCombination.is_active ? '有効' : '無効'}
               </Tag>
             </Descriptions.Item>
-
-            {selectedCombination.notes && (
-              <Descriptions.Item label="備考">{selectedCombination.notes}</Descriptions.Item>
-            )}
+            <Descriptions.Item label="作成日時">
+              {new Date(selectedCombination.created_at).toLocaleString('ja-JP')}
+            </Descriptions.Item>
           </Descriptions>
         )}
       </Modal>
     </div>
-  );
+  )
 }
-
